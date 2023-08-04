@@ -12,6 +12,7 @@ import {
 	stitch,
 	unstitch,
 } from 'raxis-plugins';
+import { GameInitData } from './game';
 
 export class Player extends Component {
 	constructor(public pid: string) {
@@ -20,7 +21,9 @@ export class Player extends Component {
 }
 
 function setupSocket(ecs: ECS) {
-	createSocket(ecs, 'game', 'ws://localhost:5100/game');
+	const { url } = ecs.getResource(GameInitData);
+
+	createSocket(ecs, 'game', `ws://${new URL(url).host}/game`);
 }
 
 function disableSystems(ecs: ECS) {
