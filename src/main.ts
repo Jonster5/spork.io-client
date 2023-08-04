@@ -1,4 +1,7 @@
-import './app.scss';
+import '@fontsource/cousine';
+import '@fontsource/rowdies';
+import './index.scss';
+
 import App from './App.svelte';
 
 const app = new App({
