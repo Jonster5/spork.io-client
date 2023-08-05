@@ -72,7 +72,7 @@ function addRemote(ecs: ECS) {
 			ecs.spawn(
 				new RemotePlayer(rid),
 				transform,
-				new Sprite('rectangle', 'tomato')
+				new Sprite('rectangle', 'tomato', 1)
 			);
 		});
 }
