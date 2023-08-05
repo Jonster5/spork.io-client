@@ -8,4 +8,10 @@ export default defineConfig({
 		host: true,
 		port: 5500,
 	},
+
+	resolve: {
+		alias: {
+			'@assets': './src/assets',
+		},
+	},
 });
