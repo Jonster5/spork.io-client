@@ -28,7 +28,6 @@ function loadMinimap(ecs: ECS) {
         const pixelsRaw = new Uint8Array(event.minimapData.slice(4))
         const imageData = new ImageData(size[0], size[1])
 
-        console.log(pixelsRaw)
         for (let i = 0; i < pixelsRaw.length; i ++) {
             switch(pixelsRaw[i]) {
                 case(0):
@@ -78,6 +77,18 @@ function loadMinimap(ecs: ECS) {
                 case(7):
                     imageData.data[i*4+0] = 208
                     imageData.data[i*4+1] = 0
+                    imageData.data[i*4+2] = 0
+                    imageData.data[i*4+3] = 255
+                    break;
+                case(255):
+                    imageData.data[i*4+0] = 100
+                    imageData.data[i*4+1] = 100
+                    imageData.data[i*4+2] = 100
+                    imageData.data[i*4+3] = 255
+                    break;
+                case(254):
+                    imageData.data[i*4+0] = 0
+                    imageData.data[i*4+1] = 255
                     imageData.data[i*4+2] = 0
                     imageData.data[i*4+3] = 255
                     break;

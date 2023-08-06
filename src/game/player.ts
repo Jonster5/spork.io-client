@@ -55,6 +55,7 @@ function translateCamera(ecs: ECS) {
 	const [canvasTransform] = ecs.query([Transform], With(Canvas)).single();
 	const [playerTransform] = ecs.query([Transform], With(Player)).single();
 	const [minimapTransform] = ecs.query([Transform], With(Minimap)).single();
+	const { pointer } = ecs.getResource(Inputs)
 
 	const [iconTransform] = ecs
 		.query([Transform], With(PlayerMapIcon))
@@ -83,6 +84,7 @@ function translateCamera(ecs: ECS) {
 				)
 			)
 	);
+	playerTransform.angle = Vec2.unit(pointer.ray.pos.clone().sub(playerTransform.pos)).angle()
 	canvasTransform.pos.set(playerTransform.pos.clone().mul(-1));
 }
 
@@ -95,9 +97,8 @@ function updateServer(ecs: ECS) {
 	const [{ pid }, t] = ecs.query([Player, Transform]).single();
 
 	const flags = new Uint8Array([
-		0, // Is clicking
+		ecs.getResource(Inputs).pointer.isDown ? 1 : 0, // Is clicking
 	]);
-
 	const update = stitch(encodeString(pid), t.serialize(), flags.buffer);
 
 	socket.send('update', update);

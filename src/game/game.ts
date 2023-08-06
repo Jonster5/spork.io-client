@@ -1,5 +1,5 @@
 import { ECS, Resource } from 'raxis';
-import { CanvasSettings, KeysToTrack, defaultPlugins } from 'raxis-plugins';
+import { CanvasSettings, Inputs, KeysToTrack, defaultPlugins } from 'raxis-plugins';
 import { PlayerPlugin } from './player';
 import { RemotePlugin } from './remote';
 import { MinimapPlugin } from './minimap';
