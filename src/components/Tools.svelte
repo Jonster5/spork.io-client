@@ -4,13 +4,15 @@
 
 	export let tools: Writable<ToolList>;
 	export let selectedTool: Writable<number>;
+
+	const toolSrc = ['./iron_axe.png','','','']
 </script>
 
 <div class="toolbox">
 	{#each $tools as tool, type}
 		<button class="holder" on:click={() => ($selectedTool = type)}>
 			<div class={$selectedTool === type ? 'selected' : ''}>
-				<img src="" alt={type.toString()} />
+				<img class="tool" src={toolSrc[type]} alt={type.toString()} />
 			</div>
 		</button>
 	{/each}
@@ -49,6 +51,7 @@
 				height: 100%;
 
 				border: 1px solid black;
+				image-rendering: pixelated;
 			}
 		}
 	}
@@ -62,4 +65,5 @@
 		justify-content: center;
 		gap: 20px;
 	}
+
 </style>

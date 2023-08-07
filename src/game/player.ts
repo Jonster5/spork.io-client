@@ -1,15 +1,21 @@
-import { Component, With, type ECS, ECSEvent, Vec2 } from 'raxis';
+import { Component, With, type ECS, ECSEvent, Vec2, QuadIn } from 'raxis';
 import {
+	Assets,
 	Canvas,
 	Inputs,
 	SocketMessageEvent,
 	Sprite,
 	Transform,
+	Tween,
+	TweenManager,
+	addTween,
 	createSocket,
 	decodeString,
 	encodeString,
 	getSocket,
+	removeTween,
 	stitch,
+	tweenIsDone,
 	unstitch,
 } from 'raxis-plugins';
 import { GameInitData } from './game';
@@ -31,6 +37,10 @@ export class Player extends Component {
 	}
 }
 
+export class Tool extends Component {
+
+}
+
 function setupSocket(ecs: ECS) {
 	const { url } = ecs.getResource(GameInitData);
 
@@ -49,6 +59,15 @@ function playerMovement(ecs: ECS) {
 	if (keymap.get('KeyD').isDown) vel.x += 500;
 
 	vel.clampMag(0, 500);
+
+	const clicking = ecs.getResource(Inputs).pointer.isDown ? 1 : 0
+	const player = ecs.query([Player]).entity()
+	const [toolTransform] = ecs.query([Transform], With(Tool)).single()
+	if (clicking && tweenIsDone(player, 'tool-rotate')) {
+		removeTween(player, 'tool-rotate')
+		toolTransform.angle = 0
+		addTween(player, 'tool-rotate', new Tween(toolTransform, {angle: -Math.PI/2}, 500, QuadIn))
+	}
 }
 
 function translateCamera(ecs: ECS) {
@@ -150,11 +169,13 @@ function createPlayer(ecs: ECS) {
 			const inventory = Inventory.deserialize(data[4]);
 			const tools = Tools.deserialize(data[5]);
 
+			const assets = ecs.getResource(Assets)
+
 			ecs.getEventWriter(LoadMinimapEvent).send(
 				new LoadMinimapEvent(minimapData)
 			);
 
-			ecs.spawn(
+			const player = ecs.spawn(
 				new Player(pid),
 				transform,
 				new Sprite('rectangle', 'royalblue', 1),
@@ -162,7 +183,17 @@ function createPlayer(ecs: ECS) {
 				health,
 				inventory,
 				tools
+			)
+
+			const toolTransform = new Transform(new Vec2(100,100), new Vec2(100,0), 0) 
+			player.addChild(
+				ecs.spawn(
+					new Tool(),
+					new Sprite('image', [assets['axe']], 2),
+					toolTransform
+				)
 			);
+			addTween(player, 'tool-rotate', new Tween(toolTransform, {angle: -Math.PI/2}, 500, QuadIn))
 		});
 }
 
@@ -178,7 +209,7 @@ function enableSystems(ecs: ECS) {
 }
 
 export function PlayerPlugin(ecs: ECS) {
-	ecs.addComponentType(Player)
+	ecs.addComponentTypes(Player, Tool)
 		.addEventType(MapLoadedEvent)
 		.addStartupSystems(setupSocket)
 		.addMainSystems(
