@@ -88,6 +88,37 @@ function translateCamera(ecs: ECS) {
 	canvasTransform.pos.set(playerTransform.pos.clone().mul(-1));
 }
 
+function recieveUpdate(ecs: ECS) {
+	if (ecs.getEventReader(SocketMessageEvent).empty()) return;
+	if (ecs.query([], With(Player)).empty()) return;
+
+	const [{ pid }] = ecs.query([Player]).single();
+	const [ playerInv ] = ecs.query([Inventory], With(Player)).single()
+
+	ecs.getEventReader(SocketMessageEvent)
+		.get()
+		.forEach(({ socket, type, body }) => {
+			if (socket.label !== 'game' || type !== 'update') return;
+
+			const update = unstitch(body);
+
+			for (const data of update) {
+				let unstitched = unstitch(data);
+				const id = decodeString(unstitched[0]);
+				const inventory = new Uint8Array(unstitched[2]);
+
+				if (id !== pid) continue;
+
+				playerInv.wood = inventory[0]
+				playerInv.stone = inventory[1]
+				playerInv.food = inventory[2]
+				playerInv.gold = inventory[3]
+				
+			}
+		});
+	console.log(playerInv.wood)
+}
+
 function updateServer(ecs: ECS) {
 	if (ecs.query([], With(Player)).empty()) {
 		ecs.disableSystem(updateServer);
@@ -140,6 +171,7 @@ function enableSystems(ecs: ECS) {
 		.get()
 		.forEach((event) => {
 			ecs.enableSystem(updateServer);
+			ecs.enableSystem(recieveUpdate);
 			ecs.enableSystem(playerMovement);
 			ecs.enableSystem(translateCamera);
 		});
@@ -153,11 +185,13 @@ export function PlayerPlugin(ecs: ECS) {
 			createPlayer,
 			playerMovement,
 			updateServer,
+			recieveUpdate,
 			translateCamera,
 			enableSystems
 		);
 
 	ecs.disableSystem(updateServer);
+	ecs.disableSystem(recieveUpdate);
 	ecs.disableSystem(playerMovement);
 	ecs.disableSystem(translateCamera);
 }

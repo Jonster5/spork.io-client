@@ -7,6 +7,7 @@ import {
 	unstitch,
 } from 'raxis-plugins';
 import { Player } from './player';
+import { Inventory } from './inventory';
 
 export class RemotePlayer extends Component {
 	constructor(public rid: string) {

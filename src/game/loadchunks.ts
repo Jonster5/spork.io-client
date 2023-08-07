@@ -171,8 +171,8 @@ function loadChunks(ecs: ECS) {
 						new Chunk(new Vec2(chunks[i], chunks[i + 1]), 0),
 						new Sprite('rectangle', color),
 						new Transform(
-							new Vec2(501, 501),
-							new Vec2(chunks[i] * 500, chunks[i + 1] * 500)
+							new Vec2(498, 498),
+							new Vec2(chunks[i] * 500 + 250, chunks[i + 1] * 500 + 250)
 						)
 					);
 
@@ -182,7 +182,7 @@ function loadChunks(ecs: ECS) {
 								new Sprite('ellipse', '#666666', 1), 
 								new Transform(
 									new Vec2(250,250), 
-									new Vec2(125, 125)
+									new Vec2(0, 0)
 								)
 							)
 						)
@@ -194,7 +194,7 @@ function loadChunks(ecs: ECS) {
 								new Sprite('ellipse', '#005500', 1), 
 								new Transform(
 									new Vec2(250,250), 
-									new Vec2(125, 125)
+									new Vec2(0, 0)
 								)
 							)
 						)
