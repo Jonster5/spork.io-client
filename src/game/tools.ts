@@ -8,6 +8,7 @@ export class UsingToolEvent extends ECSEvent {
 	}
 }
 
+export type ToolType = 'wood' | 'stone' | 'melee' | 'projectile';
 export type ToolTier = 0 | 1 | 2 | 3;
 export type ToolList = [ToolTier, ToolTier, ToolTier, ToolTier];
 
@@ -17,40 +18,22 @@ export class Tools extends Component {
 	melee: ToolTier = 0;
 	projectile: ToolTier = 0;
 
-	selected: 'wood' | 'stone' | 'melee' | 'projectile' = 'wood';
-
 	serialize(): ArrayBufferLike {
 		return new Uint8Array([
 			this.wood,
 			this.stone,
 			this.melee,
 			this.projectile,
-			this.selected === 'wood'
-				? 0
-				: this.selected === 'stone'
-				? 1
-				: this.selected === 'melee'
-				? 2
-				: 3,
 		]).buffer;
 	}
 
 	static deserialize(buffer: ArrayBufferLike): Component {
 		const data = new Uint8Array(buffer);
 		const tools = new Tools();
-		tools.wood = data[0] as ToolTier;
-		tools.stone = data[1] as ToolTier;
-		tools.melee = data[2] as ToolTier;
-		tools.projectile = data[3] as ToolTier;
-
-		tools.selected =
-			data[4] === 0
-				? 'wood'
-				: data[4] === 1
-				? 'stone'
-				: data[4] === 2
-				? 'melee'
-				: 'projectile';
+		tools.wood = data[0] as 0 | 1 | 2 | 3;
+		tools.stone = data[1] as 0 | 1 | 2 | 3;
+		tools.melee = data[2] as 0 | 1 | 2 | 3;
+		tools.projectile = data[3] as 0 | 1 | 2 | 3;
 
 		return tools;
 	}

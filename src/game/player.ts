@@ -24,6 +24,7 @@ import { LoadedMap } from './loadchunks';
 import { Health } from './health';
 import { Inventory } from './inventory';
 import { ToolDisplay, Tools } from './tools';
+import { Flags } from './flags';
 
 export class MapLoadedEvent extends ECSEvent {
 	constructor() {
@@ -144,12 +145,15 @@ function updateServer(ecs: ECS) {
 		return;
 	}
 	const socket = getSocket(ecs, 'game');
-	const [{ pid }, t] = ecs.query([Player, Transform]).single();
+	const [{ pid }, transform, tools, flags] = ecs
+		.query([Player, Transform, Tools, Flags])
+		.single();
 
-	const flags = new Uint8Array([
-		ecs.getResource(Inputs).pointer.isDown ? 1 : 0, // Is clicking
-	]);
-	const update = stitch(encodeString(pid), t.serialize(), flags.buffer);
+	const update = stitch(
+		encodeString(pid),
+		transform.serialize(),
+		flags.serialize()
+	);
 
 	socket.send('update', update);
 }
@@ -168,6 +172,7 @@ function createPlayer(ecs: ECS) {
 			const health = Health.deserialize(data[3]);
 			const inventory = Inventory.deserialize(data[4]);
 			const tools = Tools.deserialize(data[5]);
+			const flags = Flags.deserialize(data[6]);
 
 			const assets = ecs.getResource(Assets);
 
@@ -182,7 +187,8 @@ function createPlayer(ecs: ECS) {
 				new LoadedMap(),
 				health,
 				inventory,
-				tools
+				tools,
+				flags
 			);
 
 			const toolTransform = new Transform(

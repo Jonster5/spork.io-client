@@ -1,7 +1,9 @@
 import { ECS, Resource, With } from 'raxis';
-import type { Writable } from 'svelte/store';
+import { get, type Writable } from 'svelte/store';
 import { Player } from './player';
 import { Inventory } from './inventory';
+import type { ToolList, ToolTier } from './tools';
+import { Flags } from './flags';
 
 export class UIData extends Resource {
 	constructor(
@@ -16,9 +18,26 @@ export class UIData extends Resource {
 	}
 }
 
+function setTool(ecs: ECS) {
+	if (ecs.query([Flags], With(Player)).empty()) return;
+	const [flags] = ecs.query([Flags], With(Player)).single();
+	const { selectedTool } = ecs.getResource(UIData);
+
+	const tool = get(selectedTool);
+
+	flags.selectedTool =
+		tool === 0
+			? 'wood'
+			: tool === 1
+			? 'stone'
+			: tool === 2
+			? 'melee'
+			: 'projectile';
+}
+
 function updateInventory(ecs: ECS) {
 	if (ecs.query([Player]).empty()) return;
-	const [inv] = ecs.query([Inventory], With(Player)).single();
+	const [inv, flags] = ecs.query([Inventory, Flags], With(Player)).single();
 	const { wood, stone, food, gold } = ecs.getResource(UIData);
 
 	wood.set(inv.wood);
@@ -28,5 +47,5 @@ function updateInventory(ecs: ECS) {
 }
 
 export function UIPlugin(ecs: ECS) {
-	ecs.addMainSystem(updateInventory);
+	ecs.addMainSystem(updateInventory).addMainSystem(setTool);
 }

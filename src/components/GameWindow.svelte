@@ -2,10 +2,11 @@
 	import type { ECS } from 'raxis';
 	import { onMount } from 'svelte';
 	import { createGame } from '../game/game';
-	import { UIData, type ToolTier, type ToolList } from '../game/ui';
+	import { UIData } from '../game/ui';
 	import { writable, type Writable } from 'svelte/store';
 	import Tools from './Tools.svelte';
 	import Inventory from './Inventory.svelte';
+	import type { ToolList } from '../game/tools';
 
 	let target: HTMLElement;
 	let ecs: ECS;
@@ -14,7 +15,7 @@
 	const url = localStorage.getItem('server') ?? '';
 
 	const tools: Writable<ToolList> = writable([0, 0, 0, 0]);
-	const selectedTool: Writable<0 | 1 | 2> = writable(0);
+	const selectedTool: Writable<0 | 1 | 2 | 3> = writable(0);
 
 	const wood = writable(0);
 	const stone = writable(0);

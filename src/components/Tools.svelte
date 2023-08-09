@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Writable } from 'svelte/store';
-	import type { ToolList } from '../game/ui';
+	import type { ToolList } from '../game/tools';
 
 	export let tools: Writable<ToolList>;
 	export let selectedTool: Writable<number>;
