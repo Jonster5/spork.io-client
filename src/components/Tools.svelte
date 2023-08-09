@@ -5,7 +5,7 @@
 	export let tools: Writable<ToolList>;
 	export let selectedTool: Writable<number>;
 
-	const toolSrc = ['./iron_axe.png','','','']
+	const toolSrc = ['./iron_axe.png', '', '', ''];
 </script>
 
 <div class="toolbox">
@@ -50,7 +50,6 @@
 				width: 100%;
 				height: 100%;
 
-				border: 1px solid black;
 				image-rendering: pixelated;
 			}
 		}
@@ -65,5 +64,4 @@
 		justify-content: center;
 		gap: 20px;
 	}
-
 </style>

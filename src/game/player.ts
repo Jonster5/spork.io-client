@@ -23,7 +23,7 @@ import { LoadMinimapEvent, Minimap, PlayerMapIcon } from './minimap';
 import { LoadedMap } from './loadchunks';
 import { Health } from './health';
 import { Inventory } from './inventory';
-import { Tools } from './tools';
+import { ToolDisplay, Tools } from './tools';
 
 export class MapLoadedEvent extends ECSEvent {
 	constructor() {
@@ -35,10 +35,6 @@ export class Player extends Component {
 	constructor(public pid: string) {
 		super();
 	}
-}
-
-export class Tool extends Component {
-
 }
 
 function setupSocket(ecs: ECS) {
@@ -60,13 +56,17 @@ function playerMovement(ecs: ECS) {
 
 	vel.clampMag(0, 500);
 
-	const clicking = ecs.getResource(Inputs).pointer.isDown ? 1 : 0
-	const player = ecs.query([Player]).entity()
-	const [toolTransform] = ecs.query([Transform], With(Tool)).single()
+	const clicking = ecs.getResource(Inputs).pointer.isDown ? 1 : 0;
+	const player = ecs.query([Player]).entity();
+	const [toolTransform] = ecs.query([Transform], With(ToolDisplay)).single();
 	if (clicking && tweenIsDone(player, 'tool-rotate')) {
-		removeTween(player, 'tool-rotate')
-		toolTransform.angle = 0
-		addTween(player, 'tool-rotate', new Tween(toolTransform, {angle: -Math.PI/2}, 500, QuadIn))
+		removeTween(player, 'tool-rotate');
+		toolTransform.angle = 0;
+		addTween(
+			player,
+			'tool-rotate',
+			new Tween(toolTransform, { angle: -Math.PI / 2 }, 500, QuadIn)
+		);
 	}
 }
 
@@ -74,7 +74,7 @@ function translateCamera(ecs: ECS) {
 	const [canvasTransform] = ecs.query([Transform], With(Canvas)).single();
 	const [playerTransform] = ecs.query([Transform], With(Player)).single();
 	const [minimapTransform] = ecs.query([Transform], With(Minimap)).single();
-	const { pointer } = ecs.getResource(Inputs)
+	const { pointer } = ecs.getResource(Inputs);
 
 	const [iconTransform] = ecs
 		.query([Transform], With(PlayerMapIcon))
@@ -103,7 +103,9 @@ function translateCamera(ecs: ECS) {
 				)
 			)
 	);
-	playerTransform.angle = Vec2.unit(pointer.ray.pos.clone().sub(playerTransform.pos)).angle()
+	playerTransform.angle = Vec2.unit(
+		pointer.ray.pos.clone().sub(playerTransform.pos)
+	).angle();
 	canvasTransform.pos.set(playerTransform.pos.clone().mul(-1));
 }
 
@@ -112,7 +114,7 @@ function recieveUpdate(ecs: ECS) {
 	if (ecs.query([], With(Player)).empty()) return;
 
 	const [{ pid }] = ecs.query([Player]).single();
-	const [ playerInv ] = ecs.query([Inventory], With(Player)).single()
+	const [playerInv] = ecs.query([Inventory], With(Player)).single();
 
 	ecs.getEventReader(SocketMessageEvent)
 		.get()
@@ -128,14 +130,12 @@ function recieveUpdate(ecs: ECS) {
 
 				if (id !== pid) continue;
 
-				playerInv.wood = inventory[0]
-				playerInv.stone = inventory[1]
-				playerInv.food = inventory[2]
-				playerInv.gold = inventory[3]
-				
+				playerInv.wood = inventory[0];
+				playerInv.stone = inventory[1];
+				playerInv.food = inventory[2];
+				playerInv.gold = inventory[3];
 			}
 		});
-	console.log(playerInv.wood)
 }
 
 function updateServer(ecs: ECS) {
@@ -169,7 +169,7 @@ function createPlayer(ecs: ECS) {
 			const inventory = Inventory.deserialize(data[4]);
 			const tools = Tools.deserialize(data[5]);
 
-			const assets = ecs.getResource(Assets)
+			const assets = ecs.getResource(Assets);
 
 			ecs.getEventWriter(LoadMinimapEvent).send(
 				new LoadMinimapEvent(minimapData)
@@ -183,17 +183,25 @@ function createPlayer(ecs: ECS) {
 				health,
 				inventory,
 				tools
-			)
+			);
 
-			const toolTransform = new Transform(new Vec2(100,100), new Vec2(100,0), 0) 
+			const toolTransform = new Transform(
+				new Vec2(100, 100),
+				new Vec2(100, 0),
+				0
+			);
 			player.addChild(
 				ecs.spawn(
-					new Tool(),
+					new ToolDisplay(),
 					new Sprite('image', [assets['axe']], 2),
 					toolTransform
 				)
 			);
-			addTween(player, 'tool-rotate', new Tween(toolTransform, {angle: -Math.PI/2}, 500, QuadIn))
+			addTween(
+				player,
+				'tool-rotate',
+				new Tween(toolTransform, { angle: -Math.PI / 2 }, 500, QuadIn)
+			);
 		});
 }
 
@@ -209,7 +217,7 @@ function enableSystems(ecs: ECS) {
 }
 
 export function PlayerPlugin(ecs: ECS) {
-	ecs.addComponentTypes(Player, Tool)
+	ecs.addComponentTypes(Player)
 		.addEventType(MapLoadedEvent)
 		.addStartupSystems(setupSocket)
 		.addMainSystems(

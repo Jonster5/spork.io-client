@@ -5,6 +5,7 @@
 	import { UIData, type ToolTier, type ToolList } from '../game/ui';
 	import { writable, type Writable } from 'svelte/store';
 	import Tools from './Tools.svelte';
+	import Inventory from './Inventory.svelte';
 
 	let target: HTMLElement;
 	let ecs: ECS;
@@ -15,7 +16,12 @@
 	const tools: Writable<ToolList> = writable([0, 0, 0, 0]);
 	const selectedTool: Writable<0 | 1 | 2> = writable(0);
 
-	const ui = new UIData(tools, selectedTool);
+	const wood = writable(0);
+	const stone = writable(0);
+	const food = writable(0);
+	const gold = writable(0);
+
+	const ui = new UIData(tools, selectedTool, wood, stone, food, gold);
 
 	onMount(() => {
 		ecs = createGame(target, ui, username, url);
@@ -26,6 +32,9 @@
 <div id="target" bind:this={target} />
 
 <main>
+	<div class="inventory">
+		<Inventory {wood} {stone} {food} {gold} />
+	</div>
 	<div class="tools">
 		<Tools {tools} {selectedTool} />
 	</div>
@@ -45,6 +54,10 @@
 
 		grid: repeat(10, 1fr) / repeat(9, 1fr);
 		gap: 10px;
+
+		.inventory {
+			grid-area: 1 / 1 / span 1 / span 2;
+		}
 
 		.tools {
 			grid-area: -2 / 1 / span 1 / span 2;
