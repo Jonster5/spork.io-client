@@ -54,8 +54,6 @@ function dropChunks(ecs: ECS) {
 		}
 	});
 
-	console.log(loadedChunks.length);
-
 	setTimer(ecs, 1000);
 }
 
@@ -103,6 +101,10 @@ function requestChunks(ecs: ECS) {
 	setTimer(ecs, 100);
 }
 
+function seedRandom(v: Vec2, seed: number = 0) {
+	return (Math.sin(v.dot(new Vec2(12.9898,78.233))+seed)*43758.5453123)
+}
+
 function loadChunks(ecs: ECS) {
 	if (checkTimer(ecs)) return;
 	ecs.getEventReader(SocketMessageEvent)
@@ -115,10 +117,13 @@ function loadChunks(ecs: ECS) {
 				return;
 
 			const biomes = new Uint8Array(
-				event.body.slice(0, event.body.byteLength / 5)
+				event.body.slice(0, event.body.byteLength / 6)
+			);
+			const objects = new Uint8Array(
+				event.body.slice(event.body.byteLength / 6, event.body.byteLength / 3)
 			);
 			const chunks = new Int16Array(
-				event.body.slice(event.body.byteLength / 5)
+				event.body.slice(event.body.byteLength / 3)
 			);
 			const [map] = ecs.query([LoadedMap], With(Player)).single();
 			const loadedChunks = ecs.query([Chunk]).results();
@@ -166,10 +171,35 @@ function loadChunks(ecs: ECS) {
 						new Chunk(new Vec2(chunks[i], chunks[i + 1]), 0),
 						new Sprite('rectangle', color),
 						new Transform(
-							new Vec2(501, 501),
-							new Vec2(chunks[i] * 500, chunks[i + 1] * 500)
+							new Vec2(498, 498),
+							new Vec2(chunks[i] * 500 + 250, chunks[i + 1] * 500 + 250)
 						)
 					);
+
+					if (objects[i/2] == 1) {
+						chunk.addChild(
+							ecs.spawn(
+								new Sprite('ellipse', '#666666', 1), 
+								new Transform(
+									new Vec2(250,250), 
+									new Vec2(0, 0)
+								)
+							)
+						)
+					}
+
+					if (objects[i/2] == 2) {
+						chunk.addChild(
+							ecs.spawn(
+								new Sprite('ellipse', '#005500', 1), 
+								new Transform(
+									new Vec2(250,250), 
+									new Vec2(0, 0)
+								)
+							)
+						)
+					}
+
 					map.chunkEntities.push(chunk);
 				}
 			}

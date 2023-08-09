@@ -1,5 +1,5 @@
 import { ECS, Resource } from 'raxis';
-import { CanvasSettings, KeysToTrack, defaultPlugins } from 'raxis-plugins';
+import { Assets, AssetsPlugin, CanvasSettings, Inputs, KeysToTrack, defaultPlugins } from 'raxis-plugins';
 import { PlayerPlugin } from './player';
 import { RemotePlugin } from './remote';
 import { MinimapPlugin } from './minimap';
@@ -8,6 +8,7 @@ import { UIData, UIPlugin } from './ui';
 import { HealthPlugin } from './health';
 import { InventoryPlugin } from './inventory';
 import { ToolsPlugin } from './tools';
+import { LoadAssetsPlugin } from './assets';
 
 export class GameInitData extends Resource {
 	constructor(public username: string, public url: string) {
@@ -31,7 +32,8 @@ export function createGame(
 			UIPlugin,
 			HealthPlugin,
 			ToolsPlugin,
-			InventoryPlugin
+			InventoryPlugin,
+			LoadAssetsPlugin
 		)
 		.insertResource(
 			new CanvasSettings({
