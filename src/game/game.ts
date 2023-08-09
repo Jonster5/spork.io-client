@@ -1,5 +1,12 @@
 import { ECS, Resource } from 'raxis';
-import { Assets, AssetsPlugin, CanvasSettings, Inputs, KeysToTrack, defaultPlugins } from 'raxis-plugins';
+import {
+	Assets,
+	AssetsPlugin,
+	CanvasSettings,
+	Inputs,
+	KeysToTrack,
+	defaultPlugins,
+} from 'raxis-plugins';
 import { PlayerPlugin } from './player';
 import { RemotePlugin } from './remote';
 import { MinimapPlugin } from './minimap';
@@ -9,6 +16,7 @@ import { HealthPlugin } from './health';
 import { InventoryPlugin } from './inventory';
 import { ToolsPlugin } from './tools';
 import { LoadAssetsPlugin } from './assets';
+import { FlagsPlugin } from './flags';
 
 export class GameInitData extends Resource {
 	constructor(public username: string, public url: string) {
@@ -25,6 +33,7 @@ export function createGame(
 	return new ECS()
 		.insertPlugins(...defaultPlugins)
 		.insertPlugins(
+			LoadAssetsPlugin,
 			PlayerPlugin,
 			RemotePlugin,
 			MinimapPlugin,
@@ -33,7 +42,7 @@ export function createGame(
 			HealthPlugin,
 			ToolsPlugin,
 			InventoryPlugin,
-			LoadAssetsPlugin
+			FlagsPlugin
 		)
 		.insertResource(
 			new CanvasSettings({
