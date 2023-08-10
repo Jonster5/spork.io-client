@@ -1,5 +1,5 @@
 import { Component, ECS, With } from 'raxis';
-import type { ToolType } from './tools';
+import type { ToolTier, ToolType } from './tools';
 import {
 	Inputs,
 	decodeString,

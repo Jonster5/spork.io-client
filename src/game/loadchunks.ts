@@ -1,5 +1,6 @@
 import { Component, Vec2, type ECS, With, Entity } from 'raxis';
 import {
+	Assets,
 	Canvas,
 	SocketMessageEvent,
 	Sprite,
@@ -106,6 +107,8 @@ function seedRandom(v: Vec2, seed: number = 0) {
 }
 
 function loadChunks(ecs: ECS) {
+	const assets = ecs.getResource(Assets)
+
 	if (checkTimer(ecs)) return;
 	ecs.getEventReader(SocketMessageEvent)
 		.get()
@@ -179,7 +182,7 @@ function loadChunks(ecs: ECS) {
 					if (objects[i/2] == 1) {
 						chunk.addChild(
 							ecs.spawn(
-								new Sprite('ellipse', '#666666', 1), 
+								new Sprite('image', [assets['rock']], 1), 
 								new Transform(
 									new Vec2(250,250), 
 									new Vec2(0, 0)
@@ -191,7 +194,7 @@ function loadChunks(ecs: ECS) {
 					if (objects[i/2] == 2) {
 						chunk.addChild(
 							ecs.spawn(
-								new Sprite('ellipse', '#005500', 1), 
+								new Sprite('image', [assets['tree']], 1), 
 								new Transform(
 									new Vec2(250,250), 
 									new Vec2(0, 0)

@@ -1,20 +1,32 @@
 <script lang="ts">
 	import type { Writable } from 'svelte/store';
 	import type { ToolList } from '../game/tools';
+	import { RequestUpgradeEvent } from '../game/ui';
+	import type { EventWriter } from 'raxis';
 
 	export let tools: Writable<ToolList>;
 	export let selectedTool: Writable<number>;
+	export let requestUpgradeEvent: EventWriter<RequestUpgradeEvent>;
 
-	const toolSrc = ['./iron_axe.png', '', '', ''];
+	const toolSrc = [
+		['./Tools/wood_axe.png', './Tools/iron_axe.png', './Tools/diamond_axe.png', ''],
+		['./Tools/wood_pick.png', './Tools/iron_pick.png', './Tools/diamond_pick.png', ''],
+		['', '', ''],
+		['', '', ''],
+	];
 </script>
 
 <div class="toolbox">
 	{#each $tools as tool, type}
 		<button class="holder" on:click={() => ($selectedTool = type)}>
 			<div class={$selectedTool === type ? 'selected' : ''}>
-				<img class="tool" src={toolSrc[type]} alt={type.toString()} />
+				<img class="tool" src={toolSrc[type][tool]} alt={type.toString()} />
 			</div>
+			<button class="upgrade" on:click={() => {$selectedTool = type; requestUpgradeEvent.send(new RequestUpgradeEvent(type))}}>
+				<img src="./upgrade.svg" alt="upgrade">
+			</button>
 		</button>
+		
 	{/each}
 </div>
 
@@ -22,6 +34,7 @@
 	@import '../colors.scss';
 
 	.holder {
+		position: relative;
 		display: flex;
 		height: 100%;
 		aspect-ratio: 1;
@@ -47,6 +60,7 @@
 			border-radius: 10px;
 
 			img {
+				user-select: none;
 				width: 100%;
 				height: 100%;
 
@@ -55,7 +69,18 @@
 		}
 	}
 
+	.upgrade {
+		position: absolute;
+		top: 0;
+		right: 0;
+		img {
+			width: 30px;
+			height: 30px;
+		}
+	}
+
 	.toolbox {
+		position: relative;
 		display: flex;
 
 		width: 100%;
