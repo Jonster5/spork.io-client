@@ -6,10 +6,12 @@ import {
 	Sprite,
 	Transform,
 	checkTimer,
+	decodeString,
 	encodeString,
 	getSocket,
 	setTimer,
 	stitch,
+	unstitch,
 } from 'raxis-plugins';
 import { Player } from './player';
 import { LoadMinimapEvent } from './minimap';
@@ -119,14 +121,16 @@ function loadChunks(ecs: ECS) {
 			)
 				return;
 
+			const data = event.body
+
 			const biomes = new Uint8Array(
-				event.body.slice(0, event.body.byteLength / 6)
+				data.slice(0, data.byteLength / 6)
 			);
 			const objects = new Uint8Array(
-				event.body.slice(event.body.byteLength / 6, event.body.byteLength / 3)
+				data.slice(data.byteLength / 6, data.byteLength / 3)
 			);
 			const chunks = new Int16Array(
-				event.body.slice(event.body.byteLength / 3)
+				data.slice(data.byteLength / 3)
 			);
 			const [map] = ecs.query([LoadedMap], With(Player)).single();
 			const loadedChunks = ecs.query([Chunk]).results();

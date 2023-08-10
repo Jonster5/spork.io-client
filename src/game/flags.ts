@@ -23,7 +23,7 @@ export class Flags extends Component {
 
 	static deserialize(buffer: ArrayBufferLike): Component {
 		const data = unstitch(buffer);
-		const isClicking = new DataView(data[0]).getUint8(0) === 0;
+		const isClicking = new Uint8Array(data[0])[0] === 0;
 		const selectedTool = decodeString(data[1]) as ToolType;
 
 		return new Flags(isClicking, selectedTool);
@@ -34,9 +34,11 @@ function setPointerFlag(ecs: ECS) {
 	if (ecs.query([Flags], With(Player)).empty()) return;
 	const { pointer } = ecs.getResource(Inputs);
 
-	const [flags] = ecs.query([Flags], With(Player)).single();
+	const [flags] = ecs.query([Flags], With(Player)).results();
 
-	flags.isClicking = pointer.isDown;
+	for (let flag of flags) {
+		flag.isClicking = pointer.isDown;
+	}
 }
 
 export function FlagsPlugin(ecs: ECS) {

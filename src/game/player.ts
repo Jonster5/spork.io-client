@@ -70,8 +70,8 @@ function playerMovement(ecs: ECS) {
 		);
 	}
 	const [toolSprite] = ecs.query([Sprite], With(ToolDisplay)).single()
-	const [flags] = ecs.query([Flags], With(Player)).single()
-	const [tools] = ecs.query([Tools], With(Player)).single()
+	const flags = player.get(Flags)
+	const tools = player.get(Tools)
 
 	// The 4 here is the number of tiers of tool. I couldn't think of a better way to implement this
 	// besides adding a sprite for every type of tool and hiding them if you're not holding them
@@ -79,7 +79,6 @@ function playerMovement(ecs: ECS) {
 		flags.selectedTool === 'wood' ? 0
 			: flags.selectedTool === 'stone' ? 1
 			: 0)
-
 }
 
 function translateCamera(ecs: ECS) {
@@ -219,11 +218,6 @@ function createPlayer(ecs: ECS) {
 					new Sprite('image', [...assets['axes'], ...assets['picks']], 2),
 					toolTransform
 				)
-			);
-			addTween(
-				player,
-				'tool-rotate',
-				new Tween(toolTransform, { angle: -Math.PI / 2 }, 500, QuadIn)
 			);
 		});
 }
