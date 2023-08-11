@@ -48,6 +48,7 @@ export function createGame(
 			new CanvasSettings({
 				target,
 				width: 3000,
+				targetFPS: 30,
 			})
 		)
 		.insertResource(new GameInitData(username, url))
