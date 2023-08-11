@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { ECS } from 'raxis';
+	import type { ECS, EventWriter } from 'raxis';
 	import { onMount } from 'svelte';
 	import { createGame } from '../game/game';
-	import { UIData } from '../game/ui';
+	import { RequestUpgradeEvent, UIData } from '../game/ui';
 	import { writable, type Writable } from 'svelte/store';
 	import Tools from './Tools.svelte';
 	import Inventory from './Inventory.svelte';
@@ -17,6 +17,8 @@
 	const tools: Writable<ToolList> = writable([0, 0, 0, 0]);
 	const selectedTool: Writable<0 | 1 | 2 | 3> = writable(0);
 
+	let requestUpgradeEvent: EventWriter<RequestUpgradeEvent>;
+
 	const wood = writable(0);
 	const stone = writable(0);
 	const food = writable(0);
@@ -24,9 +26,10 @@
 
 	const ui = new UIData(tools, selectedTool, wood, stone, food, gold);
 
-	onMount(() => {
+	onMount(async () => {
 		ecs = createGame(target, ui, username, url);
-		ecs.run();
+		await ecs.run();
+		requestUpgradeEvent = ecs.getEventWriter(RequestUpgradeEvent)
 	});
 </script>
 
@@ -37,7 +40,7 @@
 		<Inventory {wood} {stone} {food} {gold} />
 	</div>
 	<div class="tools">
-		<Tools {tools} {selectedTool} />
+		<Tools {tools} {selectedTool} {requestUpgradeEvent} />
 	</div>
 </main>
 

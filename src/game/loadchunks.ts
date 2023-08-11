@@ -1,14 +1,17 @@
 import { Component, Vec2, type ECS, With, Entity } from 'raxis';
 import {
+	Assets,
 	Canvas,
 	SocketMessageEvent,
 	Sprite,
 	Transform,
 	checkTimer,
+	decodeString,
 	encodeString,
 	getSocket,
 	setTimer,
 	stitch,
+	unstitch,
 } from 'raxis-plugins';
 import { Player } from './player';
 import { LoadMinimapEvent } from './minimap';
@@ -106,6 +109,8 @@ function seedRandom(v: Vec2, seed: number = 0) {
 }
 
 function loadChunks(ecs: ECS) {
+	const assets = ecs.getResource(Assets)
+
 	if (checkTimer(ecs)) return;
 	ecs.getEventReader(SocketMessageEvent)
 		.get()
@@ -116,14 +121,16 @@ function loadChunks(ecs: ECS) {
 			)
 				return;
 
+			const data = event.body
+
 			const biomes = new Uint8Array(
-				event.body.slice(0, event.body.byteLength / 6)
+				data.slice(0, data.byteLength / 6)
 			);
 			const objects = new Uint8Array(
-				event.body.slice(event.body.byteLength / 6, event.body.byteLength / 3)
+				data.slice(data.byteLength / 6, data.byteLength / 3)
 			);
 			const chunks = new Int16Array(
-				event.body.slice(event.body.byteLength / 3)
+				data.slice(data.byteLength / 3)
 			);
 			const [map] = ecs.query([LoadedMap], With(Player)).single();
 			const loadedChunks = ecs.query([Chunk]).results();
@@ -179,7 +186,7 @@ function loadChunks(ecs: ECS) {
 					if (objects[i/2] == 1) {
 						chunk.addChild(
 							ecs.spawn(
-								new Sprite('ellipse', '#666666', 1), 
+								new Sprite('image', [assets['rock']], 1), 
 								new Transform(
 									new Vec2(250,250), 
 									new Vec2(0, 0)
@@ -191,7 +198,7 @@ function loadChunks(ecs: ECS) {
 					if (objects[i/2] == 2) {
 						chunk.addChild(
 							ecs.spawn(
-								new Sprite('ellipse', '#005500', 1), 
+								new Sprite('image', [assets['tree']], 1), 
 								new Transform(
 									new Vec2(250,250), 
 									new Vec2(0, 0)
