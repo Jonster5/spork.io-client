@@ -1,9 +1,10 @@
-import { ECS, Resource, With } from 'raxis';
+import { ECS, ECSEvent, Resource, With } from 'raxis';
 import { get, type Writable } from 'svelte/store';
 import { Player } from './player';
 import { Inventory } from './inventory';
 import type { ToolList, ToolTier } from './tools';
 import { Flags } from './flags';
+import { encodeString, getSocket, stitch } from 'raxis-plugins';
 
 export class UIData extends Resource {
 	constructor(
@@ -16,6 +17,28 @@ export class UIData extends Resource {
 	) {
 		super();
 	}
+}
+
+export class RequestUpgradeEvent extends ECSEvent {
+	constructor(
+		public tool: number
+	) {
+		super()
+	}
+}
+
+function sendUpgradeRequest(ecs: ECS) {
+	if (ecs.getEventReader(RequestUpgradeEvent).empty()) return
+
+	ecs.getEventReader(RequestUpgradeEvent).get().forEach((event) => {
+		const socket = getSocket(ecs, 'game');
+
+		const [ { pid } ] = ecs.query([Player]).single()
+
+		const update = stitch(encodeString(pid), new Uint8Array([event.tool]))
+
+		socket.send('upgrade-request', update);
+	})
 }
 
 function setTool(ecs: ECS) {
@@ -47,5 +70,7 @@ function updateInventory(ecs: ECS) {
 }
 
 export function UIPlugin(ecs: ECS) {
-	ecs.addMainSystem(updateInventory).addMainSystem(setTool);
+	ecs.addMainSystem(updateInventory)
+		.addMainSystems(setTool, sendUpgradeRequest)
+		.addEventType(RequestUpgradeEvent);
 }

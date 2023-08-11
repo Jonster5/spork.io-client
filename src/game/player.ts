@@ -23,7 +23,7 @@ import { LoadMinimapEvent, Minimap, PlayerMapIcon } from './minimap';
 import { LoadedMap } from './loadchunks';
 import { Health } from './health';
 import { Inventory } from './inventory';
-import { ToolDisplay, Tools } from './tools';
+import { ToolDisplay, Tools, type ToolTier } from './tools';
 import { Flags } from './flags';
 
 export class MapLoadedEvent extends ECSEvent {
@@ -69,6 +69,16 @@ function playerMovement(ecs: ECS) {
 			new Tween(toolTransform, { angle: -Math.PI / 2 }, 500, QuadIn)
 		);
 	}
+	const [toolSprite] = ecs.query([Sprite], With(ToolDisplay)).single()
+	const flags = player.get(Flags)
+	const tools = player.get(Tools)
+
+	// The 4 here is the number of tiers of tool. I couldn't think of a better way to implement this
+	// besides adding a sprite for every type of tool and hiding them if you're not holding them
+	toolSprite.index = tools[flags.selectedTool] + 4 * (
+		flags.selectedTool === 'wood' ? 0
+			: flags.selectedTool === 'stone' ? 1
+			: 0)
 }
 
 function translateCamera(ecs: ECS) {
@@ -80,6 +90,8 @@ function translateCamera(ecs: ECS) {
 	const [iconTransform] = ecs
 		.query([Transform], With(PlayerMapIcon))
 		.single();
+
+	const coolOffset = pointer.ray.pos.clone().sub(playerTransform.pos).div(-20)
 	minimapTransform.pos.set(
 		playerTransform.pos
 			.clone()
@@ -89,6 +101,7 @@ function translateCamera(ecs: ECS) {
 					canvasTransform.size.y / 2 - minimapTransform.size.y / 2
 				)
 			)
+			.sub(coolOffset)
 	);
 	iconTransform.pos.set(
 		playerTransform.pos
@@ -103,11 +116,12 @@ function translateCamera(ecs: ECS) {
 						playerTransform.pos.y / 250
 				)
 			)
+			.sub(coolOffset)
 	);
 	playerTransform.angle = Vec2.unit(
 		pointer.ray.pos.clone().sub(playerTransform.pos)
 	).angle();
-	canvasTransform.pos.set(playerTransform.pos.clone().mul(-1));
+	canvasTransform.pos.set(playerTransform.pos.clone().mul(-1).add(coolOffset));
 }
 
 function recieveUpdate(ecs: ECS) {
@@ -116,6 +130,7 @@ function recieveUpdate(ecs: ECS) {
 
 	const [{ pid }] = ecs.query([Player]).single();
 	const [playerInv] = ecs.query([Inventory], With(Player)).single();
+	const playerEntity = ecs.query([Player]).entity()
 
 	ecs.getEventReader(SocketMessageEvent)
 		.get()
@@ -127,6 +142,7 @@ function recieveUpdate(ecs: ECS) {
 				let unstitched = unstitch(data);
 				const id = decodeString(unstitched[0]);
 				const inventory = new Uint8Array(unstitched[2]);
+				playerEntity.replace(Tools.deserialize(unstitched[3]))
 
 				if (id !== pid) continue;
 
@@ -198,14 +214,9 @@ function createPlayer(ecs: ECS) {
 			player.addChild(
 				ecs.spawn(
 					new ToolDisplay(),
-					new Sprite('image', [assets['axe']], 2),
+					new Sprite('image', [...assets['axes'], ...assets['picks']], 2),
 					toolTransform
 				)
-			);
-			addTween(
-				player,
-				'tool-rotate',
-				new Tween(toolTransform, { angle: -Math.PI / 2 }, 500, QuadIn)
 			);
 		});
 }
