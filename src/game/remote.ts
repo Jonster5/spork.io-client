@@ -51,10 +51,9 @@ function recieveUpdate(ecs: ECS) {
 				const id = decodeString(unstitched[0]);
 
 				const transform = Transform.create();
-        transform.setFromBuffer(unstitched[1]);
-				const flags = Flags.deserialize(unstitched[4]) as Flags
-				const tools = Tools.deserialize(unstitched[3])
-
+				transform.setFromBuffer(unstitched[1]);
+				const flags = Flags.deserialize(unstitched[4]) as Flags;
+				const tools = Tools.deserialize(unstitched[3]);
 
 				if (id === pid) continue;
 
@@ -74,12 +73,15 @@ function recieveUpdate(ecs: ECS) {
 
 				remote.get(Transform).setFromBuffer(unstitched[1]);
 
-				const toolSprite = remote.get(Sprite)
-				toolSprite.index = tools[flags.selectedTool] + 4 * (
-					flags.selectedTool === 'wood' ? 0
-						: flags.selectedTool === 'stone' ? 1
-						: 0)
-
+				const toolSprite = remote.get(Sprite);
+				toolSprite.index =
+					tools[flags.selectedTool] +
+					4 *
+						(flags.selectedTool === 'wood'
+							? 0
+							: flags.selectedTool === 'stone'
+							? 1
+							: 0);
 			}
 		});
 }
@@ -88,22 +90,25 @@ function addRemote(ecs: ECS) {
 	ecs.getEventReader(AddRemoteEvent)
 		.get()
 		.forEach(({ rid, transform }) => {
-			const assets = ecs.getResource(Assets)
+			const assets = ecs.getResource(Assets);
 			const remotePlayer = ecs.spawn(
 				new RemotePlayer(rid),
 				transform,
 				new Sprite('rectangle', 'tomato', 1)
 			);
 
-
-			const toolTransform = new Transform(
+			const toolTransform = Transform.create(
 				new Vec2(100, 100),
 				new Vec2(100, 0),
 				0
 			);
 			remotePlayer.addChild(
 				ecs.spawn(
-					new Sprite('image', [...assets['axes'], ...assets['picks']], 2),
+					new Sprite(
+						'image',
+						[...assets['axes'], ...assets['picks']],
+						2
+					),
 					toolTransform
 				)
 			);

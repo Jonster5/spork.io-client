@@ -69,16 +69,20 @@ function playerMovement(ecs: ECS) {
 			new Tween(toolTransform, { angle: -Math.PI / 2 }, 500, QuadIn)
 		);
 	}
-	const [toolSprite] = ecs.query([Sprite], With(ToolDisplay)).single()
-	const flags = player.get(Flags)
-	const tools = player.get(Tools)
+	const [toolSprite] = ecs.query([Sprite], With(ToolDisplay)).single();
+	const flags = player.get(Flags);
+	const tools = player.get(Tools);
 
 	// The 4 here is the number of tiers of tool. I couldn't think of a better way to implement this
 	// besides adding a sprite for every type of tool and hiding them if you're not holding them
-	toolSprite.index = tools[flags.selectedTool] + 4 * (
-		flags.selectedTool === 'wood' ? 0
-			: flags.selectedTool === 'stone' ? 1
-			: 0)
+	toolSprite.index =
+		tools[flags.selectedTool] +
+		4 *
+			(flags.selectedTool === 'wood'
+				? 0
+				: flags.selectedTool === 'stone'
+				? 1
+				: 0);
 }
 
 function translateCamera(ecs: ECS) {
@@ -91,7 +95,10 @@ function translateCamera(ecs: ECS) {
 		.query([Transform], With(PlayerMapIcon))
 		.single();
 
-	const coolOffset = pointer.ray.pos.clone().sub(playerTransform.pos).div(-20)
+	const coolOffset = pointer.ray.pos
+		.clone()
+		.sub(playerTransform.pos)
+		.div(-20);
 	minimapTransform.pos.set(
 		playerTransform.pos
 			.clone()
@@ -121,7 +128,9 @@ function translateCamera(ecs: ECS) {
 	playerTransform.angle = Vec2.unit(
 		pointer.ray.pos.clone().sub(playerTransform.pos)
 	).angle();
-	canvasTransform.pos.set(playerTransform.pos.clone().mul(-1).add(coolOffset));
+	canvasTransform.pos.set(
+		playerTransform.pos.clone().mul(-1).add(coolOffset)
+	);
 }
 
 function recieveUpdate(ecs: ECS) {
@@ -130,7 +139,7 @@ function recieveUpdate(ecs: ECS) {
 
 	const [{ pid }] = ecs.query([Player]).single();
 	const [playerInv] = ecs.query([Inventory], With(Player)).single();
-	const playerEntity = ecs.query([Player]).entity()
+	const playerEntity = ecs.query([Player]).entity();
 
 	ecs.getEventReader(SocketMessageEvent)
 		.get()
@@ -142,7 +151,7 @@ function recieveUpdate(ecs: ECS) {
 				let unstitched = unstitch(data);
 				const id = decodeString(unstitched[0]);
 				const inventory = new Uint8Array(unstitched[2]);
-				playerEntity.replace(Tools.deserialize(unstitched[3]))
+				playerEntity.replace(Tools.deserialize(unstitched[3]));
 
 				if (id !== pid) continue;
 
@@ -182,7 +191,8 @@ function createPlayer(ecs: ECS) {
 
 			const data = unstitch(body);
 			const pid = decodeString(data[0]);
-			const transform = Transform.deserialize(data[1]);
+			const transform = Transform.create();
+			transform.setFromBuffer(data[1]);
 			const minimapData = data[2];
 			const health = Health.deserialize(data[3]);
 			const inventory = Inventory.deserialize(data[4]);
@@ -214,7 +224,11 @@ function createPlayer(ecs: ECS) {
 			player.addChild(
 				ecs.spawn(
 					new ToolDisplay(),
-					new Sprite('image', [...assets['axes'], ...assets['picks']], 2),
+					new Sprite(
+						'image',
+						[...assets['axes'], ...assets['picks']],
+						2
+					),
 					toolTransform
 				)
 			);
@@ -224,7 +238,7 @@ function createPlayer(ecs: ECS) {
 function enableSystems(ecs: ECS) {
 	ecs.getEventReader(MapLoadedEvent)
 		.get()
-		.forEach((event) => {
+		.forEach(() => {
 			ecs.enableSystem(updateServer);
 			ecs.enableSystem(recieveUpdate);
 			ecs.enableSystem(playerMovement);

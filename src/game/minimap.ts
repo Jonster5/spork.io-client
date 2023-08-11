@@ -1,5 +1,5 @@
 import { ECS, ECSEvent, Resource, Vec2, Component } from 'raxis';
-import { Sprite, Transform } from 'raxis-plugins';
+import { Canvas, Sprite, Transform, loadImageInto } from 'raxis-plugins';
 import { MapLoadedEvent, Player } from './player';
 
 export class LoadMinimapEvent extends ECSEvent {
@@ -23,7 +23,7 @@ export class PlayerMapIcon extends Component {
 function loadMinimap(ecs: ECS) {
 	ecs.getEventReader(LoadMinimapEvent)
 		.get()
-		.forEach((event) => {
+		.forEach(async (event) => {
 			const size = new Uint16Array(event.minimapData.slice(0, 4));
 			const pixelsRaw = new Uint8Array(event.minimapData.slice(4));
 			const imageData = new ImageData(size[0], size[1]);
@@ -104,7 +104,16 @@ function loadMinimap(ecs: ECS) {
 			ecs.spawn(
 				new Minimap(),
 				Transform.create(new Vec2(400, 400)),
-				new Sprite('image', [canvas], 1)
+				new Sprite(
+					'image',
+					[
+						await loadImageInto(
+							ecs.query([Canvas]).single()[0],
+							canvas
+						),
+					],
+					1
+				)
 			);
 			ecs.spawn(
 				new PlayerMapIcon(),
