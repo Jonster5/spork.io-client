@@ -46,7 +46,6 @@ function recieveUpdate(ecs: ECS) {
 			for (const data of update) {
 				let unstitched = unstitch(data);
 				const id = decodeString(unstitched[0]);
-				const transform = Transform.deserialize(unstitched[1]);
 
 				if (id === pid) continue;
 
@@ -54,14 +53,17 @@ function recieveUpdate(ecs: ECS) {
 					(r) => r.get(RemotePlayer).rid === id
 				);
 
+				const rt = Transform.create();
+				rt.setFromBuffer(unstitched[1]);
+
 				if (!remote) {
 					ecs.getEventWriter(AddRemoteEvent).send(
-						new AddRemoteEvent(id, transform)
+						new AddRemoteEvent(id, rt)
 					);
 					continue;
 				}
 
-				remote.replace(transform);
+				remote.get(Transform).setFromBuffer(unstitched[1]);
 			}
 		});
 }
