@@ -49,9 +49,12 @@ function recieveUpdate(ecs: ECS) {
 			for (const data of update) {
 				let unstitched = unstitch(data);
 				const id = decodeString(unstitched[0]);
-				const transform = Transform.deserialize(unstitched[1]);
+
+				const transform = Transform.create();
+        transform.setFromBuffer(unstitched[1]);
 				const flags = Flags.deserialize(unstitched[4]) as Flags
 				const tools = Tools.deserialize(unstitched[3])
+
 
 				if (id === pid) continue;
 
@@ -59,20 +62,24 @@ function recieveUpdate(ecs: ECS) {
 					(r) => r.get(RemotePlayer).rid === id
 				);
 
+				const rt = Transform.create();
+				rt.setFromBuffer(unstitched[1]);
+
 				if (!remote) {
 					ecs.getEventWriter(AddRemoteEvent).send(
-						new AddRemoteEvent(id, transform)
+						new AddRemoteEvent(id, rt)
 					);
 					continue;
 				}
 
-				remote.replace(transform);
+				remote.get(Transform).setFromBuffer(unstitched[1]);
 
 				const toolSprite = remote.get(Sprite)
 				toolSprite.index = tools[flags.selectedTool] + 4 * (
 					flags.selectedTool === 'wood' ? 0
 						: flags.selectedTool === 'stone' ? 1
 						: 0)
+
 			}
 		});
 }

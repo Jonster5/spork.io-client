@@ -105,7 +105,7 @@ function requestChunks(ecs: ECS) {
 }
 
 function seedRandom(v: Vec2, seed: number = 0) {
-	return (Math.sin(v.dot(new Vec2(12.9898,78.233))+seed)*43758.5453123)
+	return Math.sin(v.dot(new Vec2(12.9898, 78.233)) + seed) * 43758.5453123;
 }
 
 function loadChunks(ecs: ECS) {
@@ -127,7 +127,10 @@ function loadChunks(ecs: ECS) {
 				data.slice(0, data.byteLength / 6)
 			);
 			const objects = new Uint8Array(
-				data.slice(data.byteLength / 6, data.byteLength / 3)
+				event.body.slice(
+					event.body.byteLength / 6,
+					event.body.byteLength / 3
+				)
 			);
 			const chunks = new Int16Array(
 				data.slice(data.byteLength / 3)
@@ -177,34 +180,37 @@ function loadChunks(ecs: ECS) {
 					const chunk = ecs.spawn(
 						new Chunk(new Vec2(chunks[i], chunks[i + 1]), 0),
 						new Sprite('rectangle', color),
-						new Transform(
+						Transform.create(
 							new Vec2(498, 498),
-							new Vec2(chunks[i] * 500 + 250, chunks[i + 1] * 500 + 250)
+							new Vec2(
+								chunks[i] * 500 + 250,
+								chunks[i + 1] * 500 + 250
+							)
 						)
 					);
 
-					if (objects[i/2] == 1) {
+					if (objects[i / 2] == 1) {
 						chunk.addChild(
 							ecs.spawn(
-								new Sprite('image', [assets['rock']], 1), 
-								new Transform(
-									new Vec2(250,250), 
+								new Sprite('image', [assets['rock']], 1),
+								Transform.create(
+									new Vec2(250, 250),
 									new Vec2(0, 0)
 								)
 							)
-						)
+						);
 					}
 
-					if (objects[i/2] == 2) {
+					if (objects[i / 2] == 2) {
 						chunk.addChild(
 							ecs.spawn(
-								new Sprite('image', [assets['tree']], 1), 
-								new Transform(
-									new Vec2(250,250), 
+								new Sprite('image', [assets['tree']], 1),
+								Transform.create(
+									new Vec2(250, 250),
 									new Vec2(0, 0)
 								)
 							)
-						)
+						);
 					}
 
 					map.chunkEntities.push(chunk);

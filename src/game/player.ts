@@ -136,7 +136,6 @@ function recieveUpdate(ecs: ECS) {
 		.get()
 		.forEach(({ socket, type, body }) => {
 			if (socket.label !== 'game' || type !== 'update') return;
-
 			const update = unstitch(body);
 
 			for (const data of update) {
@@ -167,7 +166,7 @@ function updateServer(ecs: ECS) {
 
 	const update = stitch(
 		encodeString(pid),
-		transform.serialize(),
+		transform.serializeUnsafe(),
 		flags.serialize()
 	);
 
@@ -207,7 +206,7 @@ function createPlayer(ecs: ECS) {
 				flags
 			);
 
-			const toolTransform = new Transform(
+			const toolTransform = Transform.create(
 				new Vec2(100, 100),
 				new Vec2(100, 0),
 				0
