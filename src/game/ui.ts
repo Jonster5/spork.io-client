@@ -2,14 +2,14 @@ import { ECS, ECSEvent, Resource, With } from 'raxis';
 import { get, type Writable } from 'svelte/store';
 import { Player } from './player';
 import { Inventory } from './inventory';
-import type { ToolList, ToolTier } from './tools';
+import type { ToolList, ToolTier, ToolType } from './tools';
 import { Flags } from './flags';
 import { encodeString, getSocket, stitch } from 'raxis-plugins';
 
 export class UIData extends Resource {
 	constructor(
 		public tools: Writable<ToolList>,
-		public selectedTool: Writable<0 | 1 | 2 | 3>,
+		public selectedTool: Writable<ToolType>,
 		public wood: Writable<number>,
 		public stone: Writable<number>,
 		public food: Writable<number>,
@@ -20,25 +20,25 @@ export class UIData extends Resource {
 }
 
 export class RequestUpgradeEvent extends ECSEvent {
-	constructor(
-		public tool: number
-	) {
-		super()
+	constructor(public tool: ToolType) {
+		super();
 	}
 }
 
 function sendUpgradeRequest(ecs: ECS) {
-	if (ecs.getEventReader(RequestUpgradeEvent).empty()) return
+	if (ecs.getEventReader(RequestUpgradeEvent).empty()) return;
 
-	ecs.getEventReader(RequestUpgradeEvent).get().forEach((event) => {
-		const socket = getSocket(ecs, 'game');
+	ecs.getEventReader(RequestUpgradeEvent)
+		.get()
+		.forEach((event) => {
+			const socket = getSocket(ecs, 'game');
 
-		const [ { pid } ] = ecs.query([Player]).single()
+			const [{ pid }] = ecs.query([Player]).single();
 
-		const update = stitch(encodeString(pid), new Uint8Array([event.tool]))
+			const update = stitch(encodeString(pid), encodeString(event.tool));
 
-		socket.send('upgrade-request', update);
-	})
+			socket.send('upgrade-request', update);
+		});
 }
 
 function setTool(ecs: ECS) {
@@ -46,16 +46,7 @@ function setTool(ecs: ECS) {
 	const [flags] = ecs.query([Flags], With(Player)).single();
 	const { selectedTool } = ecs.getResource(UIData);
 
-	const tool = get(selectedTool);
-
-	flags.selectedTool =
-		tool === 0
-			? 'wood'
-			: tool === 1
-			? 'stone'
-			: tool === 2
-			? 'melee'
-			: 'projectile';
+	flags.selectedTool = get(selectedTool);
 }
 
 function updateInventory(ecs: ECS) {

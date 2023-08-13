@@ -30,10 +30,10 @@ export class Tools extends Component {
 	static deserialize(buffer: ArrayBufferLike): Component {
 		const data = new Uint8Array(buffer);
 		const tools = new Tools();
-		tools.wood = data[0] as 0 | 1 | 2 | 3;
-		tools.stone = data[1] as 0 | 1 | 2 | 3;
-		tools.melee = data[2] as 0 | 1 | 2 | 3;
-		tools.projectile = data[3] as 0 | 1 | 2 | 3;
+		tools.wood = data[0] as ToolTier;
+		tools.stone = data[1] as ToolTier;
+		tools.melee = data[2] as ToolTier;
+		tools.projectile = data[3] as ToolTier;
 
 		return tools;
 	}
