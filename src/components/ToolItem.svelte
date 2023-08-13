@@ -10,39 +10,50 @@
 	export let requestUpgradeEvent: EventWriter<RequestUpgradeEvent>;
 
 	const index = type === 'wood' ? 0 : type === 'stone' ? 1 : type === 'melee' ? 2 : 3;
+
+	$: isSelected = $selectedTool === type;
 </script>
 
-<article>
-	<button class="holder" on:click={() => ($selectedTool = type)}>
-		<div class={$selectedTool === type ? 'selected' : ''}>
-			<img class="tool" src={toolAssets[type][$tools[index]]} alt={type} />
-		</div>
-		<button
-			class="upgrade"
-			on:click={() => {
-				$selectedTool = type;
-				requestUpgradeEvent.send(new RequestUpgradeEvent(type));
-			}}
-			>``
-			<img src="./upgrade.svg" alt="upgrade" />
-		</button>
+<button class="holder" style:transform={isSelected ? 'translateY(-10px)' : ''} on:click={() => ($selectedTool = type)}>
+	<div class={isSelected ? 'selected' : ''}>
+		<img class="tool" src={toolAssets[type][$tools[index]]} alt={type} />
+	</div>
+	<button
+		class="upgrade"
+		on:click={() => {
+			$selectedTool = type;
+			requestUpgradeEvent.send(new RequestUpgradeEvent(type));
+		}}
+	>
+		<img src="./upgrade.svg" alt="upgrade" />
 	</button>
-</article>
+</button>
 
 <style lang="scss">
-	@import '../colors.scss';
-	article {
+	@import '/src/colors.scss';
+
+	.holder {
 		height: 100%;
 		aspect-ratio: 1;
 
-		position: relative;
 		display: flex;
+		position: relative;
 
 		justify-content: center;
 		align-items: center;
 
+		background: none;
+
 		border-radius: 10px;
 		border: none;
+
+		transition-duration: 50ms;
+		outline: none;
+
+		user-select: none;
+		&:hover {
+			cursor: pointer;
+		}
 
 		.selected {
 			background-color: lime !important;
@@ -55,11 +66,14 @@
 
 			background-color: white;
 			border-radius: 10px;
+			user-select: none;
 
 			img {
-				user-select: none;
 				width: 100%;
 				height: 100%;
+				border-radius: 10px;
+				background: none;
+				user-select: none;
 
 				image-rendering: pixelated;
 			}
@@ -68,8 +82,17 @@
 
 	.upgrade {
 		position: absolute;
+
+		width: 30px;
+		height: 30px;
+
 		top: 0;
 		right: 0;
+
+		background: none;
+		border: none;
+		outline: none;
+
 		img {
 			width: 30px;
 			height: 30px;

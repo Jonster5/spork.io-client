@@ -12,11 +12,11 @@ async function loadAssets(ecs: ECS) {
 	const assets = ecs.getResource(Assets);
 	const [canvas] = ecs.query([Canvas]).single();
 
-	assets['axes'] = await loadImages(...toolAssets.wood).then((imgs) =>
+	assets['wood-tools'] = await loadImages(...toolAssets.wood).then((imgs) =>
 		Promise.all(imgs.map((i) => loadImageInto(canvas, i)))
 	);
 
-	assets['picks'] = await loadImages(...toolAssets.stone).then((imgs) =>
+	assets['stone-tools'] = await loadImages(...toolAssets.stone).then((imgs) =>
 		Promise.all(imgs.map((i) => loadImageInto(canvas, i)))
 	);
 
