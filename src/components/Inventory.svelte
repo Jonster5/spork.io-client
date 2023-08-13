@@ -8,16 +8,19 @@
 </script>
 
 <div class="box">
-	<div class="res">
-		<img src="wood.svg" alt="Wood" /> <span>{$wood}</span>
+	<div class="resource">
+		<img src="wood.svg" alt="Wood" /><span>x{$wood}</span>
 	</div>
-	<div class="res">
+	<div class="line" />
+	<div class="resource">
 		<img src="stone.svg" alt="Stone" /> <span>{$stone}</span>
 	</div>
-	<div class="res">
+	<div class="line" />
+	<div class="resource">
 		<img src="food.svg" alt="Food" /> <span>{$food}</span>
 	</div>
-	<div class="res">
+	<div class="line" />
+	<div class="resource">
 		<img src="gold.svg" alt="Gold" /> <span>{$gold}</span>
 	</div>
 </div>
@@ -25,8 +28,7 @@
 <style lang="scss">
 	.box {
 		display: flex;
-		width: 80%;
-		height: 50%;
+		height: 100%;
 
 		padding: 10px;
 		box-sizing: border-box;
@@ -37,13 +39,20 @@
 		background: #00000088;
 		border-radius: 10px;
 
-		.res {
+		.line {
+			height: 80%;
+			width: 1px;
+
+			background-color: white;
+		}
+
+		.resource {
 			display: flex;
 
 			height: 100%;
-			width: 20%;
+			width: 4vw;
 
-			justify-content: space-between;
+			justify-content: space-evenly;
 			align-items: center;
 
 			img {

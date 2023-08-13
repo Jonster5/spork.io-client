@@ -3,7 +3,17 @@
 	import ServerListItem from './ServerListItem.svelte';
 	import { onDestroy, onMount } from 'svelte';
 
-	const list = ['http://yup.yup'];
+	const list = [
+		'http://yup.yup',
+		'http://yup.yup',
+		'http://yup.yup',
+		'http://yup.yup',
+		'http://yup.yup',
+		'http://yup.yup',
+		'http://yup.yup',
+		'http://yup.yup',
+		'http://yup.yup',
+	];
 	if (import.meta.env.DEV) list.unshift('http://localhost:5100');
 
 	const selected = writable(list.indexOf(localStorage.getItem('server')));
@@ -81,17 +91,12 @@
 
 		/* Track */
 		&::-webkit-scrollbar-track {
-			background: #f1f1f1;
+			background: #888;
 		}
 
 		/* Handle */
 		&::-webkit-scrollbar-thumb {
-			background: #888;
-		}
-
-		/* Handle on hover */
-		&::-webkit-scrollbar-thumb:hover {
-			background: #555;
+			background: #f1f1f1;
 		}
 	}
 </style>

@@ -47,10 +47,7 @@ function dropChunks(ecs: ECS) {
 
 	let offset = 0;
 	loadedChunks.forEach(([chunk], i) => {
-		if (
-			Math.abs(chunk.position.x - gridPosition.x) >= 10 ||
-			Math.abs(chunk.position.y - gridPosition.y) >= 10
-		) {
+		if (Math.abs(chunk.position.x - gridPosition.x) >= 10 || Math.abs(chunk.position.y - gridPosition.y) >= 10) {
 			map.chunkEntities[i - offset].destroy();
 			map.chunkEntities.splice(i - offset, 1);
 			offset++;
@@ -84,11 +81,7 @@ function requestChunks(ecs: ECS) {
 					break;
 				}
 			}
-			if (unloaded)
-				requestedChunks.push([
-					gridPosition.x + j - 5,
-					gridPosition.y + i - 5,
-				]);
+			if (unloaded) requestedChunks.push([gridPosition.x + j - 5, gridPosition.y + i - 5]);
 		}
 	}
 
@@ -109,44 +102,26 @@ function seedRandom(v: Vec2, seed: number = 0) {
 }
 
 function loadChunks(ecs: ECS) {
-	const assets = ecs.getResource(Assets)
+	const assets = ecs.getResource(Assets);
 
 	if (checkTimer(ecs)) return;
 	ecs.getEventReader(SocketMessageEvent)
 		.get()
 		.forEach((event) => {
-			if (
-				event.socket.label !== 'game' ||
-				event.type !== 'chunks-permitted'
-			)
-				return;
+			if (event.socket.label !== 'game' || event.type !== 'chunks-permitted') return;
 
-			const data = event.body
+			const data = event.body;
 
-			const biomes = new Uint8Array(
-				data.slice(0, data.byteLength / 6)
-			);
-			const objects = new Uint8Array(
-				event.body.slice(
-					event.body.byteLength / 6,
-					event.body.byteLength / 3
-				)
-			);
-			const chunks = new Int16Array(
-				data.slice(data.byteLength / 3)
-			);
+			const biomes = new Uint8Array(data.slice(0, data.byteLength / 6));
+			const objects = new Uint8Array(event.body.slice(event.body.byteLength / 6, event.body.byteLength / 3));
+			const chunks = new Int16Array(data.slice(data.byteLength / 3));
 			const [map] = ecs.query([LoadedMap], With(Player)).single();
 			const loadedChunks = ecs.query([Chunk]).results();
 
 			for (let i = 0; i < chunks.length; i += 2) {
 				let chunkOverlap = false;
 				loadedChunks.forEach(([chunk]) => {
-					if (
-						chunk.position.equals(
-							new Vec2(chunks[i], chunks[i + 1])
-						)
-					)
-						chunkOverlap = true;
+					if (chunk.position.equals(new Vec2(chunks[i], chunks[i + 1]))) chunkOverlap = true;
 				});
 				if (!chunkOverlap) {
 					let color = 'black';
@@ -180,23 +155,14 @@ function loadChunks(ecs: ECS) {
 					const chunk = ecs.spawn(
 						new Chunk(new Vec2(chunks[i], chunks[i + 1]), 0),
 						new Sprite('rectangle', color),
-						Transform.create(
-							new Vec2(498, 498),
-							new Vec2(
-								chunks[i] * 500 + 250,
-								chunks[i + 1] * 500 + 250
-							)
-						)
+						Transform.create(new Vec2(498, 498), new Vec2(chunks[i] * 500 + 250, chunks[i + 1] * 500 + 250))
 					);
 
 					if (objects[i / 2] == 1) {
 						chunk.addChild(
 							ecs.spawn(
 								new Sprite('image', [assets['rock']], 1),
-								Transform.create(
-									new Vec2(250, 250),
-									new Vec2(0, 0)
-								)
+								Transform.create(new Vec2(350, 350), new Vec2(0, 0))
 							)
 						);
 					}
@@ -205,10 +171,7 @@ function loadChunks(ecs: ECS) {
 						chunk.addChild(
 							ecs.spawn(
 								new Sprite('image', [assets['tree']], 1),
-								Transform.create(
-									new Vec2(250, 250),
-									new Vec2(0, 0)
-								)
+								Transform.create(new Vec2(350, 350), new Vec2(0, 0))
 							)
 						);
 					}
@@ -221,12 +184,7 @@ function loadChunks(ecs: ECS) {
 }
 
 export function LoadChunksPlugin(ecs: ECS) {
-	ecs.addComponentTypes(Chunk, LoadedMap).addMainSystems(
-		dropChunks,
-		requestChunks,
-		enableMap,
-		loadChunks
-	);
+	ecs.addComponentTypes(Chunk, LoadedMap).addMainSystems(dropChunks, requestChunks, enableMap, loadChunks);
 	ecs.disableSystem(dropChunks);
 	ecs.disableSystem(requestChunks);
 }

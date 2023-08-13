@@ -7,6 +7,7 @@
 	import Inventory from './Inventory.svelte';
 	import { RequestUpgradeEvent, type ToolList, type ToolType } from '../game/tools';
 	import ToolItem from './ToolItem.svelte';
+	import HotbarItem from './HotbarItem.svelte';
 
 	let target: HTMLElement;
 	let ecs: ECS;
@@ -45,25 +46,53 @@
 		<ToolItem type="melee" {selectedTool} {requestUpgradeEvent} {tools} />
 		<ToolItem type="projectile" {selectedTool} {requestUpgradeEvent} {tools} />
 	</div>
+	<div class="hotbar">
+		<HotbarItem background="royalblue" />
+		<HotbarItem />
+		<HotbarItem />
+		<HotbarItem />
+		<HotbarItem />
+		<HotbarItem />
+		<HotbarItem />
+	</div>
 </main>
 
 <style lang="scss">
 	@import '../colors.scss';
 
 	main {
-		display: grid;
-
 		width: 100%;
 		height: 100%;
 
 		padding: 10px;
 		box-sizing: border-box;
 
-		grid: repeat(10, 1fr) / repeat(9, 1fr);
 		gap: 10px;
 
+		.hotbar {
+			display: flex;
+			position: absolute;
+
+			height: 10vh;
+
+			padding: 0 10px;
+
+			bottom: 10px;
+			left: 50%;
+			transform: translateX(-50%);
+
+			background: #00000088;
+			border-radius: 10px;
+			box-shadow: 0 0 10px black;
+		}
+
 		.inventory {
-			grid-area: 1 / 1 / span 1 / span 2;
+			position: absolute;
+
+			height: 5vh;
+
+			top: 10px;
+			left: 10px;
 		}
 
 		.tools {
