@@ -2,10 +2,10 @@ import type { ECS } from 'raxis';
 import { Assets, Canvas, loadImageFile, loadImageInto, loadImages } from 'raxis-plugins';
 
 export const toolAssets = {
-	wood: ['./Tools/wood_axe.png', './Tools/iron_axe.png', './Tools/diamond_axe.png', ''],
-	stone: ['./Tools/wood_pick.png', './Tools/iron_pick.png', './Tools/diamond_pick.png', ''],
-	melee: ['', '', '', ''],
-	projectile: ['', '', '', ''],
+	wood: ['./Tools/wood_axe.png', './Tools/iron_axe.png', './Tools/diamond_axe.png', './Tools/missing.png'],
+	stone: ['./Tools/wood_pick.png', './Tools/iron_pick.png', './Tools/diamond_pick.png', './Tools/missing.png'],
+	melee: ['./Tools/missing.png', './Tools/missing.png', './Tools/missing.png', './Tools/missing.png'],
+	projectile: ['./Tools/missing.png', './Tools/missing.png', './Tools/missing.png', './Tools/missing.png'],
 } as const;
 
 async function loadAssets(ecs: ECS) {

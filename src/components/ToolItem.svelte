@@ -1,8 +1,7 @@
 <script lang="ts">
 	import type { EventWriter } from 'raxis';
 	import type { Writable } from 'svelte/store';
-	import type { ToolList, ToolType } from '../game/tools';
-	import { RequestUpgradeEvent } from '../game/ui';
+	import { RequestUpgradeEvent, type ToolList, type ToolType } from '../game/tools';
 	import { toolAssets } from '../game/assets';
 
 	export let tools: Writable<ToolList>;
@@ -10,18 +9,13 @@
 	export let selectedTool: Writable<ToolType>;
 	export let requestUpgradeEvent: EventWriter<RequestUpgradeEvent>;
 
-	const index =
-		type === 'wood' ? 0 : type === 'stone' ? 1 : type === 'melee' ? 2 : 3;
+	const index = type === 'wood' ? 0 : type === 'stone' ? 1 : type === 'melee' ? 2 : 3;
 </script>
 
 <article>
 	<button class="holder" on:click={() => ($selectedTool = type)}>
 		<div class={$selectedTool === type ? 'selected' : ''}>
-			<img
-				class="tool"
-				src={toolAssets[type][$tools[index]]}
-				alt={type}
-			/>
+			<img class="tool" src={toolAssets[type][$tools[index]]} alt={type} />
 		</div>
 		<button
 			class="upgrade"
@@ -29,29 +23,24 @@
 				$selectedTool = type;
 				requestUpgradeEvent.send(new RequestUpgradeEvent(type));
 			}}
-		>
+			>``
 			<img src="./upgrade.svg" alt="upgrade" />
 		</button>
 	</button>
 </article>
 
 <style lang="scss">
+	@import '../colors.scss';
 	article {
 		height: 100%;
 		aspect-ratio: 1;
 
-		@import '../colors.scss';
-
 		position: relative;
 		display: flex;
-		height: 50%;
-		aspect-ratio: 1;
 
 		justify-content: center;
 		align-items: center;
 
-		outline: none;
-		background-color: gray;
 		border-radius: 10px;
 		border: none;
 

@@ -2,7 +2,7 @@ import { ECS, ECSEvent, Resource, With } from 'raxis';
 import { get, type Writable } from 'svelte/store';
 import { Player } from './player';
 import { Inventory } from './inventory';
-import type { ToolList, ToolTier, ToolType } from './tools';
+import { Tools, type ToolList, type ToolTier, type ToolType } from './tools';
 import { Flags } from './flags';
 import { encodeString, getSocket, stitch } from 'raxis-plugins';
 
@@ -19,28 +19,6 @@ export class UIData extends Resource {
 	}
 }
 
-export class RequestUpgradeEvent extends ECSEvent {
-	constructor(public tool: ToolType) {
-		super();
-	}
-}
-
-function sendUpgradeRequest(ecs: ECS) {
-	if (ecs.getEventReader(RequestUpgradeEvent).empty()) return;
-
-	ecs.getEventReader(RequestUpgradeEvent)
-		.get()
-		.forEach((event) => {
-			const socket = getSocket(ecs, 'game');
-
-			const [{ pid }] = ecs.query([Player]).single();
-
-			const update = stitch(encodeString(pid), encodeString(event.tool));
-
-			socket.send('upgrade-request', update);
-		});
-}
-
 function setTool(ecs: ECS) {
 	if (ecs.query([Flags], With(Player)).empty()) return;
 	const [flags] = ecs.query([Flags], With(Player)).single();
@@ -51,7 +29,7 @@ function setTool(ecs: ECS) {
 
 function updateInventory(ecs: ECS) {
 	if (ecs.query([Player]).empty()) return;
-	const [inv, flags] = ecs.query([Inventory, Flags], With(Player)).single();
+	const [inv] = ecs.query([Inventory], With(Player)).single();
 	const { wood, stone, food, gold } = ecs.getResource(UIData);
 
 	wood.set(inv.wood);
@@ -60,8 +38,14 @@ function updateInventory(ecs: ECS) {
 	gold.set(inv.gold);
 }
 
+function updateToolList(ecs: ECS) {
+	if (ecs.query([Player]).empty()) return;
+	const { tools } = ecs.getResource(UIData);
+	const [{ wood, stone, melee, projectile }] = ecs.query([Tools], With(Player)).single();
+
+	tools.set([wood, stone, melee, projectile]);
+}
+
 export function UIPlugin(ecs: ECS) {
-	ecs.addMainSystem(updateInventory)
-		.addMainSystems(setTool, sendUpgradeRequest)
-		.addEventType(RequestUpgradeEvent);
+	ecs.addMainSystems(updateInventory, setTool, updateToolList);
 }

@@ -2,10 +2,10 @@
 	import type { ECS, EventWriter } from 'raxis';
 	import { onMount } from 'svelte';
 	import { createGame } from '../game/game';
-	import { RequestUpgradeEvent, UIData } from '../game/ui';
+	import { UIData } from '../game/ui';
 	import { writable, type Writable } from 'svelte/store';
 	import Inventory from './Inventory.svelte';
-	import type { ToolList, ToolType } from '../game/tools';
+	import { RequestUpgradeEvent, type ToolList, type ToolType } from '../game/tools';
 	import ToolItem from './ToolItem.svelte';
 
 	let target: HTMLElement;
@@ -28,9 +28,7 @@
 
 	onMount(async () => {
 		ecs = createGame(target, ui, username, url);
-		console.log(ecs);
-		// await ecs.run();
-		console.log(ecs);
+		await ecs.run();
 		requestUpgradeEvent = ecs.getEventWriter(RequestUpgradeEvent);
 	});
 </script>
@@ -70,14 +68,17 @@
 
 		.tools {
 			display: flex;
+			position: absolute;
 
-			width: 100%;
-			height: 100%;
+			width: 20vw;
+			height: 10vh;
 
-			grid-area: -2 / 1 / span 1 / span 2;
+			left: 10px;
+			bottom: 10px;
 
-			justify-content: center;
-			gap: 20px;
+			justify-content: space-evenly;
+
+			background: #00000088;
 		}
 	}
 
