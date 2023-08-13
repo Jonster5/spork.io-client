@@ -48,6 +48,7 @@
 		span {
 			color: black;
 			user-select: none;
+			font-family: 0.5vw;
 		}
 
 		&:hover {
