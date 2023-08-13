@@ -17,12 +17,7 @@ export class GameInitData extends Resource {
 	}
 }
 
-export function createGame(
-	target: HTMLElement,
-	ui: UIData,
-	username: string,
-	url: string
-) {
+export function createGame(target: HTMLElement, ui: UIData, username: string, url: string) {
 	return new ECS()
 		.insertPlugins(...defaultPlugins)
 		.insertPlugins(

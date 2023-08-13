@@ -63,11 +63,7 @@ function playerMovement(ecs: ECS) {
 	if (clicking && tweenIsDone(player, 'tool-rotate')) {
 		removeTween(player, 'tool-rotate');
 		toolTransform.angle = 0;
-		addTween(
-			player,
-			'tool-rotate',
-			new Tween(toolTransform, { angle: -Math.PI / 2 }, 500, QuadIn)
-		);
+		addTween(player, 'tool-rotate', new Tween(toolTransform, { angle: -Math.PI / 2 }, 500, QuadIn));
 	}
 	const [toolSprite] = ecs.query([Sprite], With(ToolDisplay)).single();
 	const flags = player.get(Flags);
@@ -76,13 +72,7 @@ function playerMovement(ecs: ECS) {
 	// The 4 here is the number of tiers of tool. I couldn't think of a better way to implement this
 	// besides adding a sprite for every type of tool and hiding them if you're not holding them
 	toolSprite.index =
-		tools[flags.selectedTool] +
-		4 *
-			(flags.selectedTool === 'wood'
-				? 0
-				: flags.selectedTool === 'stone'
-				? 1
-				: 0);
+		tools[flags.selectedTool] + 4 * (flags.selectedTool === 'wood' ? 0 : flags.selectedTool === 'stone' ? 1 : 0);
 }
 
 function translateCamera(ecs: ECS) {
@@ -91,14 +81,9 @@ function translateCamera(ecs: ECS) {
 	const [minimapTransform] = ecs.query([Transform], With(Minimap)).single();
 	const { pointer } = ecs.getResource(Inputs);
 
-	const [iconTransform] = ecs
-		.query([Transform], With(PlayerMapIcon))
-		.single();
+	const [iconTransform] = ecs.query([Transform], With(PlayerMapIcon)).single();
 
-	const coolOffset = pointer.ray.pos
-		.clone()
-		.sub(playerTransform.pos)
-		.div(-20);
+	const coolOffset = pointer.ray.pos.clone().sub(playerTransform.pos).div(-20);
 	minimapTransform.pos.set(
 		playerTransform.pos
 			.clone()
@@ -115,22 +100,14 @@ function translateCamera(ecs: ECS) {
 			.clone()
 			.add(
 				new Vec2(
-					canvasTransform.size.x / 2 -
-						minimapTransform.size.x / 2 +
-						playerTransform.pos.x / 250,
-					canvasTransform.size.y / 2 -
-						minimapTransform.size.y / 2 +
-						playerTransform.pos.y / 250
+					canvasTransform.size.x / 2 - minimapTransform.size.x / 2 + playerTransform.pos.x / 250,
+					canvasTransform.size.y / 2 - minimapTransform.size.y / 2 + playerTransform.pos.y / 250
 				)
 			)
 			.sub(coolOffset)
 	);
-	playerTransform.angle = Vec2.unit(
-		pointer.ray.pos.clone().sub(playerTransform.pos)
-	).angle();
-	canvasTransform.pos.set(
-		playerTransform.pos.clone().mul(-1).add(coolOffset)
-	);
+	playerTransform.angle = Vec2.unit(pointer.ray.pos.clone().sub(playerTransform.pos)).angle();
+	canvasTransform.pos.set(playerTransform.pos.clone().mul(-1).add(coolOffset));
 }
 
 function recieveUpdate(ecs: ECS) {
@@ -169,15 +146,9 @@ function updateServer(ecs: ECS) {
 		return;
 	}
 	const socket = getSocket(ecs, 'game');
-	const [{ pid }, transform, tools, flags] = ecs
-		.query([Player, Transform, Tools, Flags])
-		.single();
+	const [{ pid }, transform, tools, flags] = ecs.query([Player, Transform, Tools, Flags]).single();
 
-	const update = stitch(
-		encodeString(pid),
-		transform.serializeUnsafe(),
-		flags.serialize()
-	);
+	const update = stitch(encodeString(pid), transform.serializeUnsafe(), flags.serialize());
 
 	socket.send('update', update);
 }
@@ -201,9 +172,7 @@ function createPlayer(ecs: ECS) {
 
 			const assets = ecs.getResource(Assets);
 
-			ecs.getEventWriter(LoadMinimapEvent).send(
-				new LoadMinimapEvent(minimapData)
-			);
+			ecs.getEventWriter(LoadMinimapEvent).send(new LoadMinimapEvent(minimapData));
 
 			const player = ecs.spawn(
 				new Player(pid),
@@ -216,19 +185,11 @@ function createPlayer(ecs: ECS) {
 				flags
 			);
 
-			const toolTransform = Transform.create(
-				new Vec2(100, 100),
-				new Vec2(100, 0),
-				0
-			);
+			const toolTransform = Transform.create(new Vec2(100, 100), new Vec2(100, 0), 0);
 			player.addChild(
 				ecs.spawn(
 					new ToolDisplay(),
-					new Sprite(
-						'image',
-						[...assets['axes'], ...assets['picks']],
-						2
-					),
+					new Sprite('image', [...assets['wood-tools'], ...assets['stone-tools']], 2),
 					toolTransform
 				)
 			);
@@ -250,14 +211,7 @@ export function PlayerPlugin(ecs: ECS) {
 	ecs.addComponentTypes(Player)
 		.addEventType(MapLoadedEvent)
 		.addStartupSystems(setupSocket)
-		.addMainSystems(
-			createPlayer,
-			playerMovement,
-			updateServer,
-			recieveUpdate,
-			translateCamera,
-			enableSystems
-		);
+		.addMainSystems(createPlayer, playerMovement, updateServer, recieveUpdate, translateCamera, enableSystems);
 
 	ecs.disableSystem(updateServer);
 	ecs.disableSystem(recieveUpdate);
