@@ -7,6 +7,7 @@ import {
 	Sprite,
 	Transform,
 	Tween,
+	InputEvent,
 	TweenManager,
 	addTween,
 	createSocket,
@@ -29,6 +30,12 @@ import { Flags } from './flags';
 export class MapLoadedEvent extends ECSEvent {
 	constructor() {
 		super();
+	}
+}
+
+export class BlockHighlight extends Component {
+	constructor() {
+		super()
 	}
 }
 
@@ -131,6 +138,10 @@ function translateCamera(ecs: ECS) {
 	canvasTransform.pos.set(
 		playerTransform.pos.clone().mul(-1).add(coolOffset)
 	);
+
+	const [blockHighlightTransform] = ecs.query([Transform], With(BlockHighlight)).single()
+	blockHighlightTransform.pos.x = Math.floor((pointer.ray.pos.x)/100)*100+50
+	blockHighlightTransform.pos.y = Math.floor((pointer.ray.pos.y)/100)*100+50
 }
 
 function recieveUpdate(ecs: ECS) {
@@ -161,6 +172,28 @@ function recieveUpdate(ecs: ECS) {
 				playerInv.gold = inventory[3];
 			}
 		});
+}
+
+function requestBlockPlace(ecs: ECS) {
+	ecs.getEventReader(InputEvent<'pointerdown'>)
+	.get()
+	.filter(({ type }) => type === 'pointerdown')
+	.forEach((event) => {
+		const socket = getSocket(ecs, 'game');
+
+		const [player] = ecs
+		.query([Player])
+		.single();
+		const { pointer } = ecs.getResource(Inputs);
+
+		const blockLocation = new Int16Array(2)
+		blockLocation[0] = Math.floor((pointer.ray.pos.x)/100)
+		blockLocation[1] = Math.floor((pointer.ray.pos.y)/100)
+
+		console.log(blockLocation)
+
+		socket.send('request-block-place', stitch(encodeString(player.pid), blockLocation.buffer));
+	});
 }
 
 function updateServer(ecs: ECS) {
@@ -232,6 +265,16 @@ function createPlayer(ecs: ECS) {
 					toolTransform
 				)
 			);
+			ecs.spawn(
+				new BlockHighlight(),
+				new Sprite(
+					'rectangle',
+					'red',
+					2,
+					0.4
+				),
+				new Transform(new Vec2(100,100), new Vec2(0,0))
+			)
 		});
 }
 
@@ -247,13 +290,14 @@ function enableSystems(ecs: ECS) {
 }
 
 export function PlayerPlugin(ecs: ECS) {
-	ecs.addComponentTypes(Player)
+	ecs.addComponentTypes(Player, BlockHighlight)
 		.addEventType(MapLoadedEvent)
 		.addStartupSystems(setupSocket)
 		.addMainSystems(
 			createPlayer,
 			playerMovement,
 			updateServer,
+			requestBlockPlace,
 			recieveUpdate,
 			translateCamera,
 			enableSystems

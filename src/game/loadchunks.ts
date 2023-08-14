@@ -111,6 +111,8 @@ function seedRandom(v: Vec2, seed: number = 0) {
 function loadChunks(ecs: ECS) {
 	const assets = ecs.getResource(Assets)
 
+	console.log(ecs.query([Sprite]).size())
+
 	if (checkTimer(ecs)) return;
 	ecs.getEventReader(SocketMessageEvent)
 		.get()
@@ -121,10 +123,13 @@ function loadChunks(ecs: ECS) {
 			)
 				return;
 
-			const data = event.body
+			const data = unstitch(event.body)
+			const chunkData = data[0]
+			const chunkCoordsData = new Int16Array(data[1])
+			const blocksData = new Uint8Array(data[2])
 
 			const biomes = new Uint8Array(
-				data.slice(0, data.byteLength / 6)
+				chunkData.slice(0, chunkData.byteLength / 6)
 			);
 			const objects = new Uint8Array(
 				event.body.slice(
@@ -133,7 +138,7 @@ function loadChunks(ecs: ECS) {
 				)
 			);
 			const chunks = new Int16Array(
-				data.slice(data.byteLength / 3)
+				chunkData.slice(chunkData.byteLength / 3)
 			);
 			const [map] = ecs.query([LoadedMap], With(Player)).single();
 			const loadedChunks = ecs.query([Chunk]).results();
@@ -213,6 +218,22 @@ function loadChunks(ecs: ECS) {
 						);
 					}
 
+					for (let j = 0; j < 25; j++) {
+						const n = Math.floor(i/2)
+						const x = (j%5) * 100
+						const y = ((Math.floor(j/5))%5) * 100
+						if (blocksData[j] == 1) {
+							chunk.addChild(
+								ecs.spawn(
+									new Sprite('rectangle', 'orange', 1),
+									Transform.create(
+										new Vec2(100, 100),
+										new Vec2(x-200, y-200)
+									)
+								)
+							);
+						}
+					}
 					map.chunkEntities.push(chunk);
 				}
 			}
@@ -220,12 +241,124 @@ function loadChunks(ecs: ECS) {
 	setTimer(ecs, 100);
 }
 
+function loadBlocks(ecs: ECS) {
+	const assets = ecs.getResource(Assets)
+
+	ecs.getEventReader(SocketMessageEvent)
+		.get()
+		.forEach((event) => {
+			if ( event.socket.label !== 'game' || event.type !== 'chunk-update' ) return;
+
+			const data = unstitch(event.body)
+			const chunkPos = data[0]
+			const chunkData = new Uint8Array(data[1])
+			const blockData = new Uint8Array(data[2])
+
+			const chunks = ecs.query([Chunk]).results()
+			const [map] = ecs.query([LoadedMap], With(Player)).single();
+
+			let [player] = ecs.query([Transform], With(Player)).single()
+			console.log(player.pos.clone().div(500).floor())
+			console.log(chunkPos)
+
+			chunks.forEach(([chunk], i) => {
+				if (chunk.position.x === new DataView(chunkPos).getInt16(0, true) && chunk.position.y === new DataView(chunkPos).getInt16(2, true)) {
+					map.chunkEntities[i].destroy();
+					map.chunkEntities.splice(i, 1);
+
+					let color = 'black';
+					switch (chunkData[0]) {
+						case 0:
+							color = '#80ff80';
+							break;
+						case 1:
+							color = '#008000';
+							break;
+						case 2:
+							color = '#ffff80';
+							break;
+						case 3:
+							color = '#9c6200';
+							break;
+						case 4:
+							color = '#0000ff';
+							break;
+						case 5:
+							color = '#8080ff';
+							break;
+						case 6:
+							color = '#808080';
+							break;
+						case 7:
+							color = '#e00000';
+							break;
+					}
+
+					const chunk = ecs.spawn(
+						new Chunk(new Vec2(chunkPos[0], chunkPos[1]), 0),
+						new Sprite('rectangle', color),
+						Transform.create(
+							new Vec2(498, 498),
+							new Vec2(
+								chunkPos[0] * 500 + 250,
+								chunkPos[1] * 500 + 250
+							)
+						)
+					);
+
+					if (chunkData[1] == 1) {
+						chunk.addChild(
+							ecs.spawn(
+								new Sprite('image', [assets['rock']], 1),
+								Transform.create(
+									new Vec2(250, 250),
+									new Vec2(0, 0)
+								)
+							)
+						);
+					}
+
+					if (chunkData[2] == 2) {
+						chunk.addChild(
+							ecs.spawn(
+								new Sprite('image', [assets['tree']], 1),
+								Transform.create(
+									new Vec2(250, 250),
+									new Vec2(0, 0)
+								)
+							)
+						);
+					}
+
+					for (let j = 0; j < 25; j++) {
+						const n = Math.floor(i/2)
+						const x = (j%5) * 100
+						const y = ((Math.floor(j/5))%5) * 100
+						if (blockData[j] == 1) {
+							chunk.addChild(
+								ecs.spawn(
+									new Sprite('rectangle', 'orange', 1),
+									Transform.create(
+										new Vec2(100, 100),
+										new Vec2(x-200, y-200)
+									)
+								)
+							);
+						}
+					}
+					map.chunkEntities.push(chunk);
+				}
+			})
+	});
+}
+
 export function LoadChunksPlugin(ecs: ECS) {
 	ecs.addComponentTypes(Chunk, LoadedMap).addMainSystems(
 		dropChunks,
 		requestChunks,
 		enableMap,
-		loadChunks
+		loadChunks,
+		loadBlocks
 	);
 	ecs.disableSystem(dropChunks);
 	ecs.disableSystem(requestChunks);
