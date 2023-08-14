@@ -1,12 +1,5 @@
 import { Component, With, type ECS, ECSEvent, Vec2 } from 'raxis';
-import {
-	Assets,
-	SocketMessageEvent,
-	Sprite,
-	Transform,
-	decodeString,
-	unstitch,
-} from 'raxis-plugins';
+import { Assets, SocketMessageEvent, Sprite, Transform, decodeString, unstitch } from 'raxis-plugins';
 import { Player } from './player';
 import { Inventory } from './inventory';
 import { ToolDisplay, Tools } from './tools';
@@ -57,17 +50,13 @@ function recieveUpdate(ecs: ECS) {
 
 				if (id === pid) continue;
 
-				const remote = remotes.find(
-					(r) => r.get(RemotePlayer).rid === id
-				);
+				const remote = remotes.find((r) => r.get(RemotePlayer).rid === id);
 
 				const rt = Transform.create();
 				rt.setFromBuffer(unstitched[1]);
 
 				if (!remote) {
-					ecs.getEventWriter(AddRemoteEvent).send(
-						new AddRemoteEvent(id, rt)
-					);
+					ecs.getEventWriter(AddRemoteEvent).send(new AddRemoteEvent(id, rt));
 					continue;
 				}
 
@@ -76,12 +65,7 @@ function recieveUpdate(ecs: ECS) {
 				const toolSprite = remote.get(Sprite);
 				toolSprite.index =
 					tools[flags.selectedTool] +
-					4 *
-						(flags.selectedTool === 'wood'
-							? 0
-							: flags.selectedTool === 'stone'
-							? 1
-							: 0);
+					4 * (flags.selectedTool === 'wood' ? 0 : flags.selectedTool === 'stone' ? 1 : 0);
 			}
 		});
 }
@@ -91,26 +75,11 @@ function addRemote(ecs: ECS) {
 		.get()
 		.forEach(({ rid, transform }) => {
 			const assets = ecs.getResource(Assets);
-			const remotePlayer = ecs.spawn(
-				new RemotePlayer(rid),
-				transform,
-				new Sprite('rectangle', 'tomato', 1)
-			);
+			const remotePlayer = ecs.spawn(new RemotePlayer(rid), transform, new Sprite('rectangle', 'tomato', 1));
 
-			const toolTransform = Transform.create(
-				new Vec2(100, 100),
-				new Vec2(100, 0),
-				0
-			);
+			const toolTransform = Transform.create(new Vec2(100, 100), new Vec2(100, 0), 0);
 			remotePlayer.addChild(
-				ecs.spawn(
-					new Sprite(
-						'image',
-						[...assets['axes'], ...assets['picks']],
-						2
-					),
-					toolTransform
-				)
+				ecs.spawn(new Sprite('image', [...assets['wood-tools'], ...assets['stone-tools']], 2), toolTransform)
 			);
 		});
 }

@@ -2,11 +2,11 @@
 	import type { ECS, EventWriter } from 'raxis';
 	import { onMount } from 'svelte';
 	import { createGame } from '../game/game';
-	import { RequestUpgradeEvent, UIData } from '../game/ui';
+	import { UIData } from '../game/ui';
 	import { writable, type Writable } from 'svelte/store';
-	import Tools from './Tools.svelte';
 	import Inventory from './Inventory.svelte';
-	import type { ToolList } from '../game/tools';
+	import { RequestUpgradeEvent, type ToolList, type ToolType } from '../game/tools';
+	import ToolItem from './ToolItem.svelte';
 
 	let target: HTMLElement;
 	let ecs: ECS;
@@ -15,7 +15,7 @@
 	const url = localStorage.getItem('server') ?? '';
 
 	const tools: Writable<ToolList> = writable([0, 0, 0, 0]);
-	const selectedTool: Writable<0 | 1 | 2 | 3> = writable(0);
+	const selectedTool: Writable<ToolType> = writable('wood');
 
 	let requestUpgradeEvent: EventWriter<RequestUpgradeEvent>;
 
@@ -29,7 +29,7 @@
 	onMount(async () => {
 		ecs = createGame(target, ui, username, url);
 		await ecs.run();
-		requestUpgradeEvent = ecs.getEventWriter(RequestUpgradeEvent)
+		requestUpgradeEvent = ecs.getEventWriter(RequestUpgradeEvent);
 	});
 </script>
 
@@ -40,7 +40,10 @@
 		<Inventory {wood} {stone} {food} {gold} />
 	</div>
 	<div class="tools">
-		<Tools {tools} {selectedTool} {requestUpgradeEvent} />
+		<ToolItem type="wood" {selectedTool} {requestUpgradeEvent} {tools} />
+		<ToolItem type="stone" {selectedTool} {requestUpgradeEvent} {tools} />
+		<ToolItem type="melee" {selectedTool} {requestUpgradeEvent} {tools} />
+		<ToolItem type="projectile" {selectedTool} {requestUpgradeEvent} {tools} />
 	</div>
 </main>
 
@@ -64,7 +67,19 @@
 		}
 
 		.tools {
-			grid-area: -2 / 1 / span 1 / span 2;
+			display: flex;
+			position: absolute;
+
+			height: 10vh;
+
+			left: 10px;
+			bottom: 10px;
+
+			justify-content: space-evenly;
+
+			background: #00000088;
+			border-radius: 10px;
+			box-shadow: 0 0 10px black;
 		}
 	}
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { writable } from 'svelte/store';
 	import ServerListItem from './ServerListItem.svelte';
+	import { onDestroy, onMount } from 'svelte';
 
 	const list = ['http://yup.yup'];
 	if (import.meta.env.DEV) list.unshift('http://localhost:5100');
@@ -33,10 +34,21 @@
 
 		return response;
 	}
+
+	const results = writable(Promise.all(list.map(get)));
+	let refresh: number;
+
+	onMount(() => {
+		refresh = setInterval(() => results.set(Promise.all(list.map(get))), 5000);
+	});
+
+	onDestroy(() => {
+		if (refresh !== undefined) clearInterval(refresh);
+	});
 </script>
 
 <div>
-	{#await Promise.all(list.map(get)) then sdata}
+	{#await $results then sdata}
 		{#each sdata as d, index}
 			<ServerListItem {...d} {index} {selected} />
 		{/each}
