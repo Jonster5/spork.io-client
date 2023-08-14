@@ -127,7 +127,7 @@ function recieveUpdate(ecs: ECS) {
 			for (const data of update) {
 				let unstitched = unstitch(data);
 				const id = decodeString(unstitched[0]);
-				const inventory = new Uint8Array(unstitched[2]);
+				const inventory = new Uint16Array(unstitched[2]);
 				playerEntity.replace(Tools.deserialize(unstitched[3]));
 
 				if (id !== pid) continue;
