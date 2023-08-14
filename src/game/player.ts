@@ -260,7 +260,8 @@ export function PlayerPlugin(ecs: ECS) {
 			updateServer,
 			recieveUpdate,
 			translateCamera,
-			enableSystems
+			enableSystems,
+			requestBlockPlace
 		);
 
 	ecs.disableSystem(updateServer);
