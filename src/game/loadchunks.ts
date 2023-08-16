@@ -25,9 +25,8 @@ export class Chunk extends Component {
 	}
 }
 
-// Contingent - size of the map funny
 export class LoadedMap extends Component {
-	constructor(public chunkEntities: Entity[][] = new Array(200).fill(null).map(() => new Array(200).fill(null))) {
+	constructor(public chunkEntities: Entity[] = []) {
 		super();
 	}
 }
@@ -53,10 +52,11 @@ function dropChunks(ecs: ECS) {
 	if (checkTimer(ecs)) return;
 
 	const [playerTransform] = ecs.query([Transform], With(Player)).single();
-	const gridPosition = playerTransform.pos.clone().div(500).floor().add(100);
+	const gridPosition = playerTransform.pos.clone().div(500).floor();
 	const loadedChunks = ecs.query([Chunk]).results();
 	const [map] = ecs.query([LoadedMap], With(Player)).single();
 
+	let offset = 0;
 	loadedChunks.forEach(([chunk], i) => {
 		if (Math.abs(chunk.position.x - gridPosition.x) >= 10 || Math.abs(chunk.position.y - gridPosition.y) >= 10) {
 			console.log(chunk.position, gridPosition);
@@ -86,8 +86,8 @@ function requestChunks(ecs: ECS) {
 			let unloaded = true;
 			for (let [loadedChunk] of loadedChunks) {
 				if (
-					loadedChunk.position.x - 100 == gridPosition.x + j - 5 &&
-					loadedChunk.position.y - 100 == gridPosition.y + i - 5
+					loadedChunk.position.x == gridPosition.x + j - 5 &&
+					loadedChunk.position.y == gridPosition.y + i - 5
 				) {
 					unloaded = false;
 					break;
