@@ -6,15 +6,18 @@ import {
 	Sprite,
 	Transform,
 	checkTimer,
+	createSocket,
 	decodeString,
 	encodeString,
 	getSocket,
 	setTimer,
+	startImageAnimation,
 	stitch,
 	unstitch,
 } from 'raxis-plugins';
 import { Player } from './player';
 import { LoadMinimapEvent } from './minimap';
+import { GameInitData } from './game';
 
 export class Chunk extends Component {
 	constructor(public position: Vec2, public biome: number) {
@@ -40,6 +43,12 @@ function enableMap(ecs: ECS) {
 			ecs.enableSystem(dropChunks);
 			ecs.enableSystem(requestChunks);
 		});
+}
+
+function chunkSocket(ecs: ECS) {
+	const { url } = ecs.getResource(GameInitData);
+
+	createSocket(ecs, 'map', `ws://${new URL(url).host}/map`);
 }
 
 function dropChunks(ecs: ECS) {
@@ -68,7 +77,7 @@ function dropChunks(ecs: ECS) {
 function requestChunks(ecs: ECS) {
 	if (checkTimer(ecs)) return;
 
-	const socket = getSocket(ecs, 'game');
+	const socket = getSocket(ecs, 'map');
 
 	const [playerTransform] = ecs.query([Transform], With(Player)).single();
 	const gridPosition = playerTransform.pos.clone().div(500).floor();
@@ -89,11 +98,7 @@ function requestChunks(ecs: ECS) {
 					break;
 				}
 			}
-			if (unloaded)
-				requestedChunks.push([
-					gridPosition.x + j - 5,
-					gridPosition.y + i - 5,
-				]);
+			if (unloaded) requestedChunks.push([gridPosition.x + j - 5, gridPosition.y + i - 5]);
 		}
 	}
 
@@ -114,7 +119,7 @@ function seedRandom(v: Vec2, seed: number = 0) {
 }
 
 function loadChunks(ecs: ECS) {
-	const assets = ecs.getResource(Assets)
+	const assets = ecs.getResource(Assets);
 
 	if (checkTimer(ecs)) return;
 	ecs.getEventReader(SocketMessageEvent)
@@ -157,54 +162,50 @@ function loadChunks(ecs: ECS) {
 						chunkOverlap = true;
 				});
 				if (!chunkOverlap) {
-					let color = 'black';
+					let sprite: Sprite<'image' | 'rectangle'>;
 					switch (biomes[i / 2]) {
 						case 0:
-							color = '#80ff80';
+							sprite = new Sprite('rectangle', '#80ff80', -1);
 							break;
 						case 1:
-							color = '#008000';
+							sprite = new Sprite('rectangle', '#008000', -1);
 							break;
 						case 2:
-							color = '#ffff80';
+							sprite = new Sprite('rectangle', '#ffff80', -1);
 							break;
 						case 3:
-							color = '#9c6200';
+							sprite = new Sprite('rectangle', '#9c6200', -1);
 							break;
 						case 4:
-							color = '#0000ff';
+							sprite = new Sprite('image', assets['water'], -1);
+							startImageAnimation(sprite as Sprite<'image'>, 1000 / 6);
 							break;
 						case 5:
-							color = '#8080ff';
+							sprite = new Sprite('image', assets['water'], -1);
+							startImageAnimation(sprite as Sprite<'image'>, 1000 / 6);
 							break;
 						case 6:
-							color = '#808080';
+							sprite = new Sprite('rectangle', '#808080', -1);
 							break;
 						case 7:
-							color = '#e00000';
+							sprite = new Sprite('rectangle', '#e00000', -1);
+							break;
+						default:
+							sprite = new Sprite('rectangle', 'black', -1);
 							break;
 					}
 
 					const chunk = ecs.spawn(
-						new Chunk(new Vec2(chunks[i]+100, chunks[i + 1]+100), 0),
-						new Sprite('rectangle', color),
-						Transform.create(
-							new Vec2(498, 498),
-							new Vec2(
-								chunks[i] * 500 + 250,
-								chunks[i + 1] * 500 + 250
-							)
-						)
+						new Chunk(new Vec2(chunks[i], chunks[i + 1]), 0),
+						sprite,
+						Transform.create(new Vec2(498, 498), new Vec2(chunks[i] * 500 + 250, chunks[i + 1] * 500 + 250))
 					);
 
 					if (objects[i / 2] == 1) {
 						chunk.addChild(
 							ecs.spawn(
 								new Sprite('image', [assets['rock']], 1),
-								Transform.create(
-									new Vec2(250, 250),
-									new Vec2(0, 0)
-								)
+								Transform.create(new Vec2(250, 250), new Vec2(0, 0))
 							)
 						);
 					}
@@ -213,10 +214,7 @@ function loadChunks(ecs: ECS) {
 						chunk.addChild(
 							ecs.spawn(
 								new Sprite('image', [assets['tree']], 1),
-								Transform.create(
-									new Vec2(250, 250),
-									new Vec2(0, 0)
-								)
+								Transform.create(new Vec2(250, 250), new Vec2(0, 0))
 							)
 						);
 					}
