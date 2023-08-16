@@ -11,7 +11,6 @@ import {
 	encodeString,
 	getSocket,
 	setTimer,
-	startImageAnimation,
 	stitch,
 	unstitch,
 } from 'raxis-plugins';
@@ -45,7 +44,7 @@ function enableMap(ecs: ECS) {
 function chunkSocket(ecs: ECS) {
 	const { url } = ecs.getResource(GameInitData);
 
-	createSocket(ecs, 'map', `ws://${new URL(url).host}/map`);
+	createSocket(ecs, 'game', `ws://${new URL(url).host}/map`);
 }
 
 function dropChunks(ecs: ECS) {
@@ -139,42 +138,37 @@ function loadChunks(ecs: ECS) {
 					if (chunk.position.equals(new Vec2(chunks[i] + 100, chunks[i + 1] + 100))) chunkOverlap = true;
 				});
 				if (!chunkOverlap) {
-					let sprite: Sprite<'image' | 'rectangle'>;
+					let color = 'black';
 					switch (biomes[i / 2]) {
 						case 0:
-							sprite = new Sprite('rectangle', '#80ff80', -1);
+							color = '#80ff80';
 							break;
 						case 1:
-							sprite = new Sprite('rectangle', '#008000', -1);
+							color = '#008000';
 							break;
 						case 2:
-							sprite = new Sprite('rectangle', '#ffff80', -1);
+							color = '#ffff80';
 							break;
 						case 3:
-							sprite = new Sprite('rectangle', '#9c6200', -1);
+							color = '#9c6200';
 							break;
 						case 4:
-							sprite = new Sprite('image', assets['water'], -1);
-							startImageAnimation(sprite as Sprite<'image'>, 1000 / 6);
+							color = '#0000ff';
 							break;
 						case 5:
-							sprite = new Sprite('image', assets['water'], -1);
-							startImageAnimation(sprite as Sprite<'image'>, 1000 / 6);
+							color = '#8080ff';
 							break;
 						case 6:
-							sprite = new Sprite('rectangle', '#808080', -1);
+							color = '#808080';
 							break;
 						case 7:
-							sprite = new Sprite('rectangle', '#e00000', -1);
-							break;
-						default:
-							sprite = new Sprite('rectangle', 'black', -1);
+							color = '#e00000';
 							break;
 					}
 
 					const chunk = ecs.spawn(
-						new Chunk(new Vec2(chunks[i] + 100, chunks[i + 1] + 100), 0),
-						sprite,
+						new Chunk(new Vec2(chunks[i], chunks[i + 1]), 0),
+						new Sprite('rectangle', color),
 						Transform.create(new Vec2(498, 498), new Vec2(chunks[i] * 500 + 250, chunks[i + 1] * 500 + 250))
 					);
 

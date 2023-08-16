@@ -10,7 +10,6 @@ import { InventoryPlugin } from './inventory';
 import { ToolsPlugin } from './tools';
 import { LoadAssetsPlugin } from './assets';
 import { FlagsPlugin } from './flags';
-import { NPCPlugin } from './npc';
 
 export class GameInitData extends Resource {
 	constructor(public username: string, public url: string) {
@@ -31,8 +30,7 @@ export function createGame(target: HTMLElement, ui: UIData, username: string, ur
 			HealthPlugin,
 			ToolsPlugin,
 			InventoryPlugin,
-			FlagsPlugin,
-			NPCPlugin
+			FlagsPlugin
 		)
 		.insertResource(
 			new CanvasSettings({
