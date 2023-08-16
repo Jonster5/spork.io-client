@@ -1,4 +1,4 @@
-import { Component, With, type ECS, ECSEvent, Vec2, QuadIn } from 'raxis';
+import { Component, With, type ECS, ECSEvent, Vec2, QuadIn, Entity } from 'raxis';
 import {
 	Assets,
 	Canvas,
@@ -18,10 +18,11 @@ import {
 	stitch,
 	tweenIsDone,
 	unstitch,
+	globalPos,
 } from 'raxis-plugins';
 import { GameInitData } from './game';
 import { LoadMinimapEvent, Minimap, PlayerMapIcon } from './minimap';
-import { LoadedMap } from './loadchunks';
+import { Chunk, LoadedMap } from './loadchunks';
 import { Health } from './health';
 import { Inventory } from './inventory';
 import { ToolDisplay, Tools, type ToolTier } from './tools';
@@ -76,10 +77,58 @@ function playerMovement(ecs: ECS) {
 	const flags = player.get(Flags);
 	const tools = player.get(Tools);
 
-	// The 4 here is the number of tiers of tool. I couldn't think of a better way to implement this
+	// CONTINGENT - The 4 here is the number of tiers of tool. I couldn't think of a better way to implement this
 	// besides adding a sprite for every type of tool and hiding them if you're not holding them
 	toolSprite.index =
 		tools[flags.selectedTool] + 4 * (flags.selectedTool === 'wood' ? 0 : flags.selectedTool === 'stone' ? 1 : 0);
+}
+
+function playerCollide(ecs: ECS) {
+	const [transform] = ecs.query([Transform], With(Player)).single();
+	const movement = transform.vel.clone()
+	const chunks = ecs.query([Chunk]).results()
+	const chunkEntities = ecs.query([Chunk]).entities().map((e) => ecs.entity(e))
+
+	const chunkPos = transform.pos.clone().div(500).floor()
+	chunks.forEach(([chunk], i) => {
+		if (chunk.position.x == chunkPos.x && chunk.position.y == chunkPos.y) {
+			console.log('fig')
+			const blocks = chunkEntities[i].children().map((e) => ecs.entity(e) )
+			blocks.forEach((block, i) => {
+				const blockTransform = block.get(Transform);
+				const blockPos = chunkEntities[i].get(Transform).pos.sub(block.get(Transform).pos.clone()).sub(250)
+				const collision = AABB(transform, blockTransform, blockPos)
+				if (collision[0]) {
+					movement.x > 0 ? 
+					transform.pos.x = blockPos.x - blockTransform.size.x : 
+					transform.pos.x = blockPos.x + blockTransform.size.x
+					movement.x = 0
+				}
+				if (collision[1]) {
+					movement.y > 0 ? 
+					transform.pos.y = blockPos.y - blockTransform.size.y : 
+					transform.pos.y = blockPos.y + blockTransform.size.y
+					movement.y = 0
+				}
+				transform.vel = movement
+			})
+		}
+	});
+}
+
+function AABB(player: Transform, block: Transform, blockPos: Vec2) {
+	
+	console.log(player.pos, blockPos)
+	const axes = [false, false]
+	if (
+		player.pos.x - player.size.x < blockPos.x + block.size.x &&
+		player.pos.x + player.size.x > blockPos.x - block.size.x
+	) { axes[0] = true } 
+	if (
+		player.pos.y - player.size.y < blockPos.y + block.size.y &&
+		player.pos.y + player.size.y > blockPos.y - block.size.y
+	) { axes[1] = true } 
+	return axes
 }
 
 function translateCamera(ecs: ECS) {
@@ -167,8 +216,6 @@ function requestBlockPlace(ecs: ECS) {
 		blockLocation[0] = Math.floor((pointer.ray.pos.x)/100)
 		blockLocation[1] = Math.floor((pointer.ray.pos.y)/100)
 
-		console.log(blockLocation)
-
 		socket.send('request-block-place', stitch(encodeString(player.pid), blockLocation.buffer));
 	});
 }
@@ -246,6 +293,7 @@ function enableSystems(ecs: ECS) {
 			ecs.enableSystem(updateServer);
 			ecs.enableSystem(recieveUpdate);
 			ecs.enableSystem(playerMovement);
+			ecs.enableSystem(playerCollide);
 			ecs.enableSystem(translateCamera);
 		});
 }
@@ -257,6 +305,7 @@ export function PlayerPlugin(ecs: ECS) {
 		.addMainSystems(
 			createPlayer,
 			playerMovement,
+			playerCollide,
 			updateServer,
 			recieveUpdate,
 			translateCamera,
@@ -267,5 +316,6 @@ export function PlayerPlugin(ecs: ECS) {
 	ecs.disableSystem(updateServer);
 	ecs.disableSystem(recieveUpdate);
 	ecs.disableSystem(playerMovement);
+	ecs.disableSystem(playerCollide);
 	ecs.disableSystem(translateCamera);
 }
