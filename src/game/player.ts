@@ -92,11 +92,10 @@ function playerCollide(ecs: ECS) {
 	const chunkPos = transform.pos.clone().div(500).floor()
 	chunks.forEach(([chunk], i) => {
 		if (chunk.position.x == chunkPos.x && chunk.position.y == chunkPos.y) {
-			console.log('fig')
-			const blocks = chunkEntities[i].children().map((e) => ecs.entity(e) )
+			const blocks = chunkEntities[chunk.position.y][chunk.position.x].children().map((e) => ecs.entity(e) )
 			blocks.forEach((block, i) => {
 				const blockTransform = block.get(Transform);
-				const blockPos = chunkEntities[i].get(Transform).pos.sub(block.get(Transform).pos.clone()).sub(250)
+				const blockPos = chunkEntities[chunk.position.y][chunk.position.x].get(Transform).pos.sub(block.get(Transform).pos.clone()).sub(250)
 				const collision = AABB(transform, blockTransform, blockPos)
 				if (collision[0]) {
 					movement.x > 0 ? 
@@ -117,8 +116,6 @@ function playerCollide(ecs: ECS) {
 }
 
 function AABB(player: Transform, block: Transform, blockPos: Vec2) {
-	
-	console.log(player.pos, blockPos)
 	const axes = [false, false]
 	if (
 		player.pos.x - player.size.x < blockPos.x + block.size.x &&

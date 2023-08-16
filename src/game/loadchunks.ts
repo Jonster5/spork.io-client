@@ -22,8 +22,9 @@ export class Chunk extends Component {
 	}
 }
 
+// Contingent - size of the map funny
 export class LoadedMap extends Component {
-	constructor(public chunkEntities: Entity[] = []) {
+	constructor(public chunkEntities: Entity[][] = new Array(200).fill(null).map(() => new Array(200).fill(null))) {
 		super();
 	}
 }
@@ -45,20 +46,19 @@ function dropChunks(ecs: ECS) {
 	if (checkTimer(ecs)) return;
 
 	const [playerTransform] = ecs.query([Transform], With(Player)).single();
-	const gridPosition = playerTransform.pos.clone().div(500).floor();
+	const gridPosition = playerTransform.pos.clone().div(500).floor().add(100);
 	const loadedChunks = ecs.query([Chunk]).results();
 	const [map] = ecs.query([LoadedMap], With(Player)).single();
 
-	let offset = 0;
 	loadedChunks.forEach(([chunk], i) => {
 		if (
 			Math.abs(chunk.position.x - gridPosition.x) >= 10 ||
 			Math.abs(chunk.position.y - gridPosition.y) >= 10
 		) {
-			map.chunkEntities[i - offset].removeChildren()
-			map.chunkEntities[i - offset].destroy();
-			map.chunkEntities.splice(i - offset, 1);
-			offset++;
+			console.log(chunk.position, gridPosition)
+			map.chunkEntities[chunk.position.y][chunk.position.x].removeChildren()
+			map.chunkEntities[chunk.position.y][chunk.position.x].destroy();
+			map.chunkEntities[chunk.position.y][chunk.position.x] = null
 		}
 	});
 
@@ -82,8 +82,8 @@ function requestChunks(ecs: ECS) {
 			let unloaded = true;
 			for (let [loadedChunk] of loadedChunks) {
 				if (
-					loadedChunk.position.x == gridPosition.x + j - 5 &&
-					loadedChunk.position.y == gridPosition.y + i - 5
+					loadedChunk.position.x - 100 == gridPosition.x + j - 5 &&
+					loadedChunk.position.y - 100 == gridPosition.y + i - 5
 				) {
 					unloaded = false;
 					break;
@@ -151,7 +151,7 @@ function loadChunks(ecs: ECS) {
 				loadedChunks.forEach(([chunk]) => {
 					if (
 						chunk.position.equals(
-							new Vec2(chunks[i], chunks[i + 1])
+							new Vec2(chunks[i]+100, chunks[i + 1]+100)
 						)
 					)
 						chunkOverlap = true;
@@ -186,7 +186,7 @@ function loadChunks(ecs: ECS) {
 					}
 
 					const chunk = ecs.spawn(
-						new Chunk(new Vec2(chunks[i], chunks[i + 1]), 0),
+						new Chunk(new Vec2(chunks[i]+100, chunks[i + 1]+100), 0),
 						new Sprite('rectangle', color),
 						Transform.create(
 							new Vec2(498, 498),
@@ -238,7 +238,7 @@ function loadChunks(ecs: ECS) {
 							);
 						}
 					}
-					map.chunkEntities.push(chunk);
+					map.chunkEntities[chunks[i + 1]+100][chunks[i]+100] = chunk;
 				}
 			}
 		});
@@ -260,13 +260,12 @@ function loadBlocks(ecs: ECS) {
 			const blockData = new Uint8Array(data[2])
 
 			const chunks = ecs.query([Chunk]).results()
-			const chunkEntities = ecs.query([Chunk]).entities().map((e) => ecs.entity(e))
 			const [map] = ecs.query([LoadedMap], With(Player)).single();
 
 			let [player] = ecs.query([Transform], With(Player)).single()
 
 			chunks.forEach(([chunk], i) => {
-				if (chunk.position.x === new DataView(chunkPos).getInt16(0, true) && chunk.position.y === new DataView(chunkPos).getInt16(2, true)) {
+				if (chunk.position.x-100 === new DataView(chunkPos).getInt16(0, true) && chunk.position.y-100 === new DataView(chunkPos).getInt16(2, true)) {
 
 					let color = 'black';
 					switch (chunkData[0]) {
@@ -295,14 +294,14 @@ function loadBlocks(ecs: ECS) {
 							color = '#e00000';
 							break;
 					}
-					chunkEntities[i].removeChildren(...chunkEntities[i].children(With(BlockObject)))
+					map.chunkEntities[chunk.position.y][chunk.position.x].removeChildren(...map.chunkEntities[chunk.position.y][chunk.position.x].children(With(BlockObject)))
 
 					for (let j = 0; j < 25; j++) {
 						const n = Math.floor(i/2)
 						const x = (j%5) * 100
 						const y = ((Math.floor(j/5))%5) * 100
 						if (blockData[j] == 1) {
-							chunkEntities[i].addChild(
+							map.chunkEntities[chunk.position.y][chunk.position.x].addChild(
 								ecs.spawn(
 									new BlockObject(),
 									new Sprite('rectangle', 'orange', 1),
