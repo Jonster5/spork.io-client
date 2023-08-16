@@ -173,7 +173,7 @@ function loadChunks(ecs: ECS) {
 					}
 
 					const chunk = ecs.spawn(
-						new Chunk(new Vec2(chunks[i], chunks[i + 1]), 0),
+						new Chunk(new Vec2(chunks[i] + 100, chunks[i + 1] + 100), 0),
 						sprite,
 						Transform.create(new Vec2(498, 498), new Vec2(chunks[i] * 500 + 250, chunks[i + 1] * 500 + 250))
 					);
