@@ -44,7 +44,7 @@ function enableMap(ecs: ECS) {
 function chunkSocket(ecs: ECS) {
 	const { url } = ecs.getResource(GameInitData);
 
-	createSocket(ecs, 'game', `ws://${new URL(url).host}/map`);
+	createSocket(ecs, 'map', `ws://${new URL(url).host}/map`);
 }
 
 function dropChunks(ecs: ECS) {

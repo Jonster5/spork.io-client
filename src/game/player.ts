@@ -121,7 +121,7 @@ function recieveUpdate(ecs: ECS) {
 	ecs.getEventReader(SocketMessageEvent)
 		.get()
 		.forEach(({ socket, type, body }) => {
-			if (socket.label !== 'game' || type !== 'update') return;
+			if (socket.label !== 'game' || type !== 'player-update') return;
 			const update = unstitch(body);
 
 			for (const data of update) {
@@ -150,7 +150,7 @@ function updateServer(ecs: ECS) {
 
 	const update = stitch(encodeString(pid), transform.serializeUnsafe(), flags.serialize());
 
-	socket.send('update', update);
+	socket.send('player-update', update);
 }
 
 function createPlayer(ecs: ECS) {
