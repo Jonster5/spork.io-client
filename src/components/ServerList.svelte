@@ -3,7 +3,7 @@
 	import ServerListItem from './ServerListItem.svelte';
 	import { onDestroy, onMount } from 'svelte';
 
-	const list = ['http://yup.yup'];
+	const list = ['yupyupyup'];
 	if (import.meta.env.DEV) list.unshift('http://localhost:5100');
 
 	const selected = writable(list.indexOf(localStorage.getItem('server')));

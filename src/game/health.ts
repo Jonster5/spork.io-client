@@ -9,7 +9,7 @@ export class Health extends Component {
 		return new Uint8Array([this.value]).buffer;
 	}
 
-	static deserialize(buffer: ArrayBufferLike): Component {
+	static deserialize(buffer: ArrayBufferLike) {
 		return new Health(new Uint8Array(buffer)[0]);
 	}
 }
