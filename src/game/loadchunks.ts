@@ -242,32 +242,7 @@ function loadBlocks(ecs: ECS) {
 					chunk.position.y - 100 === new DataView(chunkPos).getInt16(2, true)
 				) {
 					let color = 'black';
-					switch (chunkData[0]) {
-						case 0:
-							color = '#80ff80';
-							break;
-						case 1:
-							color = '#008000';
-							break;
-						case 2:
-							color = '#ffff80';
-							break;
-						case 3:
-							color = '#9c6200';
-							break;
-						case 4:
-							color = '#0000ff';
-							break;
-						case 5:
-							color = '#8080ff';
-							break;
-						case 6:
-							color = '#808080';
-							break;
-						case 7:
-							color = '#e00000';
-							break;
-					}
+
 					map.chunkEntities[chunk.position.y][chunk.position.x].removeChildren(
 						...map.chunkEntities[chunk.position.y][chunk.position.x].children(With(BlockObject))
 					);
