@@ -8,6 +8,10 @@ export const toolAssets = {
 	projectile: ['./Tools/missing.png', './Tools/missing.png', './Tools/missing.png', './Tools/missing.png'],
 } as const;
 
+const npcAssets = {
+	pig: ['./npc/pig1.png'],
+};
+
 async function loadAssets(ecs: ECS) {
 	const assets = ecs.getResource(Assets);
 	const [canvas] = ecs.query([Canvas]).single();
@@ -22,6 +26,10 @@ async function loadAssets(ecs: ECS) {
 
 	assets['tree'] = await loadImageInto(canvas, await loadImageFile('./tree.png'));
 	assets['rock'] = await loadImageInto(canvas, await loadImageFile('./rock.png'));
+
+	assets['pig'] = await loadImages(...npcAssets.pig).then((imgs) =>
+		Promise.all(imgs.map((i) => loadImageInto(canvas, i)))
+	);
 }
 
 export function LoadAssetsPlugin(ecs: ECS) {
