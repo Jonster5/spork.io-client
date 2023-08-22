@@ -104,29 +104,14 @@ function loadMinimap(ecs: ECS) {
 			ecs.spawn(
 				new Minimap(),
 				Transform.create(new Vec2(400, 400)),
-				new Sprite(
-					'image',
-					[
-						await loadImageInto(
-							ecs.query([Canvas]).single()[0],
-							canvas
-						),
-					],
-					1
-				)
+				new Sprite('image', [await loadImageInto(ecs.query([Canvas]).single()[0], canvas)], 1)
 			);
-			ecs.spawn(
-				new PlayerMapIcon(),
-				Transform.create(new Vec2(5, 5)),
-				new Sprite('rectangle', 'black', 2)
-			);
+			ecs.spawn(new PlayerMapIcon(), Transform.create(new Vec2(10, 10)), new Sprite('ellipse', 'black', 2));
 
 			ecs.getEventWriter(MapLoadedEvent).send(new MapLoadedEvent());
 		});
 }
 
 export function MinimapPlugin(ecs: ECS) {
-	ecs.addComponentTypes(Minimap, PlayerMapIcon)
-		.addEventType(LoadMinimapEvent)
-		.addMainSystem(loadMinimap);
+	ecs.addComponentTypes(Minimap, PlayerMapIcon).addEventType(LoadMinimapEvent).addMainSystem(loadMinimap);
 }

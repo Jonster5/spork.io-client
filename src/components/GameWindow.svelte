@@ -8,6 +8,8 @@
 	import { RequestUpgradeEvent, type ToolList, type ToolType } from '../game/tools';
 	import ToolItem from './ToolItem.svelte';
 	import HotbarItem from './HotbarItem.svelte';
+	import type { BlockType } from '../game/loadchunks';
+	import { blockAssets } from '../game/assets';
 
 	let target: HTMLElement;
 	let ecs: ECS;
@@ -17,6 +19,8 @@
 
 	const tools: Writable<ToolList> = writable([0, 0, 0, 0]);
 	const selectedTool: Writable<ToolType> = writable('wood');
+	const selectedBlock: Writable<'none' | BlockType> = writable('none');
+	const hbitems = Object.keys(blockAssets) as (keyof typeof blockAssets)[];
 
 	let requestUpgradeEvent: EventWriter<RequestUpgradeEvent>;
 
@@ -25,7 +29,7 @@
 	const food = writable(0);
 	const gold = writable(0);
 
-	const ui = new UIData(tools, selectedTool, wood, stone, food, gold);
+	const ui = new UIData(tools, selectedTool, selectedBlock, wood, stone, food, gold);
 
 	onMount(async () => {
 		ecs = createGame(target, ui, username, url);
@@ -47,13 +51,9 @@
 		<ToolItem type="projectile" {selectedTool} {requestUpgradeEvent} {tools} />
 	</div>
 	<div class="hotbar">
-		<HotbarItem background="royalblue" />
-		<HotbarItem />
-		<HotbarItem />
-		<HotbarItem />
-		<HotbarItem />
-		<HotbarItem />
-		<HotbarItem />
+		{#each hbitems as name}
+			<HotbarItem {selectedBlock} {name} />
+		{/each}
 	</div>
 </main>
 
@@ -73,7 +73,7 @@
 			display: flex;
 			position: absolute;
 
-			height: 10vh;
+			height: 5vw;
 
 			padding: 0 10px;
 
@@ -99,7 +99,7 @@
 			display: flex;
 			position: absolute;
 
-			height: 10vh;
+			height: 5vw;
 
 			left: 10px;
 			bottom: 10px;

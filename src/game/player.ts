@@ -19,14 +19,18 @@ import {
 	tweenIsDone,
 	unstitch,
 	globalPos,
+	Handle,
 } from 'raxis-plugins';
 import { GameInitData } from './game';
 import { LoadMinimapEvent, Minimap, PlayerMapIcon } from './minimap';
-import { Chunk, LoadedMap } from './loadchunks';
+import { Chunk, LoadedMap, blockTypeToNumber } from './loadchunks';
 import { Health } from './health';
 import { Inventory } from './inventory';
 import { ToolDisplay, Tools, type ToolTier } from './tools';
 import { Flags } from './flags';
+import { UIData } from './ui';
+import { get } from 'svelte/store';
+import { blockAssets } from './assets';
 
 export class MapLoadedEvent extends ECSEvent {
 	constructor() {
@@ -146,7 +150,7 @@ function translateCamera(ecs: ECS) {
 
 	const [iconTransform] = ecs.query([Transform], With(PlayerMapIcon)).single();
 
-	const coolOffset = pointer.ray.pos.clone().sub(playerTransform.pos).div(-20);
+	const coolOffset = pointer.ray.pos.clone().sub(playerTransform.pos).div(new Vec2(-20, -10));
 	minimapTransform.pos.set(
 		playerTransform.pos
 			.clone()
@@ -173,8 +177,15 @@ function translateCamera(ecs: ECS) {
 	canvasTransform.pos.set(playerTransform.pos.clone().mul(-1).add(coolOffset));
 
 	const [blockHighlightTransform] = ecs.query([Transform], With(BlockHighlight)).single();
-	blockHighlightTransform.pos.x = Math.floor(pointer.ray.pos.x / 100) * 100 + 50;
-	blockHighlightTransform.pos.y = Math.floor(pointer.ray.pos.y / 100) * 100 + 50;
+
+	const newBHPos = pointer.ray.pos.clone().div(100).floor().mul(100).add(50);
+	const angle = playerTransform.pos.angleTo(newBHPos);
+
+	if (newBHPos.distanceToSq(playerTransform.pos) > 750 ** 2) {
+		newBHPos.setFromPolar(750, angle).add(playerTransform.pos).div(100).floor().mul(100).add(50);
+	}
+
+	blockHighlightTransform.pos.set(newBHPos);
 }
 
 function recieveUpdate(ecs: ECS) {
@@ -188,7 +199,7 @@ function recieveUpdate(ecs: ECS) {
 	ecs.getEventReader(SocketMessageEvent)
 		.get()
 		.forEach(({ socket, type, body }) => {
-			if (socket.label !== 'game' || type !== 'update') return;
+			if (socket.label !== 'game' || type !== 'player-update') return;
 			const update = unstitch(body);
 
 			for (const data of update) {
@@ -211,17 +222,21 @@ function requestBlockPlace(ecs: ECS) {
 	ecs.getEventReader(InputEvent<'pointerdown'>)
 		.get()
 		.filter(({ type }) => type === 'pointerdown')
-		.forEach((event) => {
+		.forEach(({ event }) => {
 			const socket = getSocket(ecs, 'game');
 
 			const [player] = ecs.query([Player]).single();
-			const { pointer } = ecs.getResource(Inputs);
+			const [{ pos }] = ecs.query([Transform], With(BlockHighlight)).single();
 
-			const blockLocation = new Int16Array(2);
-			blockLocation[0] = Math.floor(pointer.ray.pos.x / 100);
-			blockLocation[1] = Math.floor(pointer.ray.pos.y / 100);
+			const blockLocation = new Float64Array([pos.x, pos.y]).buffer;
 
-			socket.send('request-block-place', stitch(encodeString(player.pid), blockLocation.buffer));
+			const blocktype = get(ecs.getResource(UIData).selectedBlock);
+			if (blocktype === 'none') return;
+
+			socket.send(
+				'request-block-place',
+				stitch(encodeString(player.pid), blockLocation, new Uint8Array([blockTypeToNumber(blocktype)]).buffer)
+			);
 		});
 }
 
@@ -235,7 +250,7 @@ function updateServer(ecs: ECS) {
 
 	const update = stitch(encodeString(pid), transform.serializeUnsafe(), flags.serialize());
 
-	socket.send('update', update);
+	socket.send('player-update', update);
 }
 
 function createPlayer(ecs: ECS) {
@@ -262,7 +277,7 @@ function createPlayer(ecs: ECS) {
 			const player = ecs.spawn(
 				new Player(pid),
 				transform,
-				new Sprite('rectangle', 'royalblue', 1),
+				new Sprite('ellipse', 'royalblue', 1),
 				new LoadedMap(),
 				health,
 				inventory,
@@ -280,7 +295,7 @@ function createPlayer(ecs: ECS) {
 			);
 			ecs.spawn(
 				new BlockHighlight(),
-				new Sprite('rectangle', 'red', 2, 0.4),
+				new Sprite('image', assets.blocks['wall-wood'], 2, 0.4),
 				new Transform(new Vec2(100, 100), new Vec2(0, 0))
 			);
 		});

@@ -3,6 +3,7 @@ import {
 	Assets,
 	SocketMessageEvent,
 	Sprite,
+	Time,
 	Transform,
 	checkTimer,
 	decodeString,
@@ -17,7 +18,7 @@ import { Player } from './player';
 export type NPCType = 'pig' | 'chicken';
 
 export class NPC extends Component {
-	constructor(public nid: string, readonly type: NPCType) {
+	constructor(public nid: string, readonly type: NPCType, public tSinceLastUpdate: number = 0) {
 		super();
 	}
 
@@ -75,27 +76,30 @@ function recieveNPCUpdate(ecs: ECS) {
 				npc.get(Transform).setFromBuffer(data[1]);
 				npc.get(Transform).vel.set(0, 0);
 				npc.replace(health);
+				npc.get(NPC).tSinceLastUpdate = 0;
 			}
 		});
 }
 
 function addNPC(ecs: ECS) {
+	if (ecs.getEventReader(AddNPCEvent).empty()) return;
 	const assets = ecs.getResource(Assets);
 
-	ecs.getEventReader(AddNPCEvent)
-		.get()
-		.forEach(({ npc, t, h }) => {
-			const entity = ecs.spawn(npc, t, h);
+	const ev = ecs.getEventReader(AddNPCEvent).get()[0];
+	if (!ev) return;
+	const { npc, t, h } = ev;
+	if (!npc || !t || !h) return;
 
-			switch (npc.type) {
-				case 'pig':
-					entity.insert(new Sprite('image', assets['pig'], 4));
-					break;
-				case 'chicken':
-					entity.insert(new Sprite('ellipse', 'whitesmoke', 4));
-					break;
-			}
-		});
+	const entity = ecs.spawn(npc, t, h);
+
+	switch (npc.type) {
+		case 'pig':
+			entity.insert(new Sprite('image', assets['pig'], 4));
+			break;
+		case 'chicken':
+			entity.insert(new Sprite('ellipse', 'whitesmoke', 4));
+			break;
+	}
 }
 
 function removeNPC(ecs: ECS) {
@@ -106,25 +110,23 @@ function removeNPC(ecs: ECS) {
 		});
 }
 
-function despawnFarNPCS(ecs: ECS) {
-	if (checkTimer(ecs)) return;
-	if (ecs.query([Player]).empty()) return;
+function despawnNPCS(ecs: ECS) {
+	const time = ecs.getResource(Time);
 
-	const [pt] = ecs.query([Transform], With(Player)).single();
-
-	ecs.query([], With(NPC), With(Transform))
+	ecs.query([], With(NPC))
 		.entities()
 		.forEach((eid) => {
-			if (ecs.entity(eid).get(Transform).pos.distanceToSq(pt.pos) > 10000 ** 2) {
+			const entity = ecs.entity(eid);
+			entity.get(NPC).tSinceLastUpdate += time.delta;
+
+			if (entity.get(NPC).tSinceLastUpdate > 3000) {
 				ecs.getEventWriter(RemoveNPCEvent).send(new RemoveNPCEvent(eid));
 			}
 		});
-
-	setTimer(ecs, 1000);
 }
 
 export function NPCPlugin(ecs: ECS) {
 	ecs.addComponentType(NPC)
 		.addEventTypes(AddNPCEvent, RemoveNPCEvent)
-		.addMainSystems(recieveNPCUpdate, addNPC, despawnFarNPCS, removeNPC);
+		.addMainSystems(recieveNPCUpdate, addNPC, despawnNPCS, removeNPC);
 }

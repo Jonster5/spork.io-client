@@ -1,15 +1,18 @@
 import { ECS, ECSEvent, Resource, With } from 'raxis';
 import { get, type Writable } from 'svelte/store';
-import { Player } from './player';
+import { BlockHighlight, Player } from './player';
 import { Inventory } from './inventory';
 import { Tools, type ToolList, type ToolTier, type ToolType } from './tools';
 import { Flags } from './flags';
-import { encodeString, getSocket, stitch } from 'raxis-plugins';
+import { Assets, Handle, Sprite, encodeString, getSocket, gotoImageFrame, stitch } from 'raxis-plugins';
+import { blockTypeToNumber, type BlockType } from './loadchunks';
+import { blockAssets } from './assets';
 
 export class UIData extends Resource {
 	constructor(
 		public tools: Writable<ToolList>,
 		public selectedTool: Writable<ToolType>,
+		public selectedBlock: Writable<'none' | BlockType>,
 		public wood: Writable<number>,
 		public stone: Writable<number>,
 		public food: Writable<number>,
@@ -25,6 +28,25 @@ function setTool(ecs: ECS) {
 	const { selectedTool } = ecs.getResource(UIData);
 
 	flags.selectedTool = get(selectedTool);
+}
+
+function setBlock(ecs: ECS) {
+	if (ecs.query([Flags], With(Player)).empty()) return;
+	const [flags] = ecs.query([Flags], With(Player)).single();
+	const { selectedBlock } = ecs.getResource(UIData);
+	const [bd] = ecs.query([Sprite], With(BlockHighlight)).single();
+	const assets = ecs.getResource(Assets);
+
+	const name = get(selectedBlock);
+
+	flags.selectedBlock = name;
+
+	if (name === 'none') {
+		bd.visible = false;
+	} else {
+		bd.visible = true;
+		bd.material = assets.blocks[name];
+	}
 }
 
 function updateInventory(ecs: ECS) {
@@ -47,5 +69,5 @@ function updateToolList(ecs: ECS) {
 }
 
 export function UIPlugin(ecs: ECS) {
-	ecs.addMainSystems(updateInventory, setTool, updateToolList);
+	ecs.addMainSystems(updateInventory, setTool, setBlock, updateToolList);
 }

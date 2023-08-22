@@ -1,7 +1,8 @@
-import { Component, Vec2, type ECS, With, Entity } from 'raxis';
+import { Component, Vec2, type ECS, With, Entity, Resource } from 'raxis';
 import {
 	Assets,
 	Canvas,
+	Handle,
 	SocketMessageEvent,
 	Sprite,
 	Transform,
@@ -15,9 +16,10 @@ import {
 } from 'raxis-plugins';
 import { Player } from './player';
 import { LoadMinimapEvent } from './minimap';
+import { Health } from './health';
 
 export class Chunk extends Component {
-	constructor(public position: Vec2, public biome: number) {
+	constructor(public position: Vec2, public biome: number, public gen: bigint) {
 		super();
 	}
 }
@@ -29,75 +31,91 @@ export class LoadedMap extends Component {
 	}
 }
 
-export class BlockObject extends Component {}
+export class MapTracker extends Resource {
+	existingChunks: Map<`${number},${number}`, number> = new Map();
+}
+
+export class BlockObject extends Component {
+	constructor(public id: string) {
+		super();
+	}
+}
+
+export type BlockType = `${'wall' | 'door' | 'spikes'}-${'wood' | 'stone' | 'reinforced'}`;
+
+export function blockTypeToNumber(type: BlockType) {
+	switch (type) {
+		case 'wall-wood':
+			return 0;
+		case 'wall-stone':
+			return 1;
+		case 'wall-reinforced':
+			return 2;
+		case 'door-wood':
+			return 3;
+		case 'door-stone':
+			return 4;
+		case 'door-reinforced':
+			return 5;
+		case 'spikes-wood':
+			return 6;
+		case 'spikes-stone':
+			return 7;
+		case 'spikes-reinforced':
+			return 8;
+		default:
+			return -1;
+	}
+}
+
+export function blockNumberToType(num: number): BlockType | 'none' {
+	switch (num) {
+		case 0:
+			return 'wall-wood';
+		case 1:
+			return 'wall-stone';
+		case 2:
+			return 'wall-reinforced';
+		case 3:
+			return 'door-wood';
+		case 4:
+			return 'door-stone';
+		case 5:
+			return 'door-reinforced';
+		case 6:
+			return 'spikes-wood';
+		case 7:
+			return 'spikes-stone';
+		case 8:
+			return 'spikes-reinforced';
+		default:
+			return 'none';
+	}
+}
 
 function enableMap(ecs: ECS) {
 	ecs.getEventReader(LoadMinimapEvent)
 		.get()
 		.forEach((event) => {
 			ecs.enableSystem(dropChunks);
-			ecs.enableSystem(requestChunks);
 		});
 }
 
 function dropChunks(ecs: ECS) {
 	if (checkTimer(ecs)) return;
+	if (ecs.query([Player]).empty()) return;
 
-	const [playerTransform] = ecs.query([Transform], With(Player)).single();
-	const gridPosition = playerTransform.pos.clone().div(500).floor().add(100);
-	const loadedChunks = ecs.query([Chunk]).results();
-	const [map] = ecs.query([LoadedMap], With(Player)).single();
+	const [{ pos }] = ecs.query([Transform], With(Player)).single();
+	const { existingChunks } = ecs.getResource(MapTracker);
 
-	loadedChunks.forEach(([chunk], i) => {
-		if (Math.abs(chunk.position.x - gridPosition.x) >= 10 || Math.abs(chunk.position.y - gridPosition.y) >= 10) {
-			console.log(chunk.position, gridPosition);
-			map.chunkEntities[chunk.position.y][chunk.position.x].removeChildren();
-			map.chunkEntities[chunk.position.y][chunk.position.x].destroy();
-			map.chunkEntities[chunk.position.y][chunk.position.x] = null;
-		}
-	});
-
-	setTimer(ecs, 1000);
-}
-
-function requestChunks(ecs: ECS) {
-	if (checkTimer(ecs)) return;
-
-	const socket = getSocket(ecs, 'game');
-
-	const [playerTransform] = ecs.query([Transform], With(Player)).single();
-	const gridPosition = playerTransform.pos.clone().div(500).floor();
-	const [{ pid }] = ecs.query([Player]).single();
-
-	const requestedChunks: number[][] = [];
-	const loadedChunks = ecs.query([Chunk]).results();
-
-	for (let i = 0; i < 11; i++) {
-		for (let j = 0; j < 11; j++) {
-			let unloaded = true;
-			for (let [loadedChunk] of loadedChunks) {
-				if (
-					loadedChunk.position.x - 100 == gridPosition.x + j - 5 &&
-					loadedChunk.position.y - 100 == gridPosition.y + i - 5
-				) {
-					unloaded = false;
-					break;
-				}
-			}
-			if (unloaded) requestedChunks.push([gridPosition.x + j - 5, gridPosition.y + i - 5]);
+	for (const [coords, eid] of existingChunks.entries()) {
+		if (ecs.entity(eid).get(Transform)?.pos.distanceToSq(pos) > (10 * 500) ** 2) {
+			ecs.destroy(eid);
+			existingChunks.delete(coords);
 		}
 	}
 
-	const uuidbuffer = encodeString(pid);
-	const requestChunkBuffer = new ArrayBuffer(4 * requestedChunks.length);
-
-	requestedChunks.forEach((chunk, i) => {
-		new DataView(requestChunkBuffer).setInt16(i * 4 + 0, chunk[0], true);
-		new DataView(requestChunkBuffer).setInt16(i * 4 + 2, chunk[1], true);
-	});
-
-	socket.send('chunks', stitch(uuidbuffer, requestChunkBuffer));
-	setTimer(ecs, 100);
+	setTimer(ecs, 1000);
 }
 
 function seedRandom(v: Vec2, seed: number = 0) {
@@ -106,74 +124,60 @@ function seedRandom(v: Vec2, seed: number = 0) {
 
 function loadChunks(ecs: ECS) {
 	const assets = ecs.getResource(Assets);
+	const { existingChunks } = ecs.getResource(MapTracker);
 
-	if (checkTimer(ecs)) return;
 	ecs.getEventReader(SocketMessageEvent)
 		.get()
-		.forEach((event) => {
-			if (event.socket.label !== 'game' || event.type !== 'chunks-permitted') return;
+		.forEach(({ socket, type, body }) => {
+			if (socket.label !== 'game' || type !== 'chunks') return;
 
-			const data = unstitch(event.body);
-			const chunkData = data[0];
-			const chunkCoordsData = new Int16Array(data[1]);
-			const blocksData = new Uint8Array(data[2]);
+			const chunks = unstitch(body);
 
-			const biomes = new Uint8Array(chunkData.slice(0, chunkData.byteLength / 6));
-			const objects = new Uint8Array(event.body.slice(event.body.byteLength / 6, event.body.byteLength / 3));
-			const chunks = new Int16Array(chunkData.slice(chunkData.byteLength / 3));
-			const [map] = ecs.query([LoadedMap], With(Player)).single();
-			const loadedChunks = ecs.query([Chunk]).results();
+			for (const chunk of chunks) {
+				const chunkData = unstitch(chunk);
 
-			for (let i = 0; i < chunks.length; i += 2) {
-				let chunkOverlap = false;
-				loadedChunks.forEach(([chunk]) => {
-					if (chunk.position.equals(new Vec2(chunks[i] + 100, chunks[i + 1] + 100))) chunkOverlap = true;
-				});
-				if (!chunkOverlap) {
-					let color = 'black';
-					switch (biomes[i / 2]) {
-						case 0:
-							color = '#80ff80';
-							break;
-						case 1:
-							color = '#008000';
-							break;
-						case 2:
-							color = '#ffff80';
-							break;
-						case 3:
-							color = '#9c6200';
-							break;
-						case 4:
-							color = '#0000ff';
-							break;
-						case 5:
-							color = '#8080ff';
-							break;
-						case 6:
-							color = '#808080';
-							break;
-						case 7:
-							color = '#e00000';
-							break;
-					}
+				const [cx, cy] = new Int16Array(chunkData[0]);
+
+				const gen: bigint = new BigUint64Array(chunkData[2])[0];
+				const blocksData = unstitch(chunkData[3]);
+				if (!existingChunks.has(`${cx},${cy}`)) {
+					const [biome, obj] = new Uint16Array(chunkData[1]);
+
+					const color = (() => {
+						switch (biome) {
+							case 0:
+								return '#80ff80';
+							case 1:
+								return '#008000';
+							case 2:
+								return '#ffff80';
+							case 3:
+								return '#9c6200';
+							case 4:
+								return '#0000ff';
+							case 5:
+								return '#8080ff';
+							case 6:
+								return '#808080';
+							case 7:
+								return '#e00000';
+						}
+					})();
 
 					const chunk = ecs.spawn(
-						new Chunk(new Vec2(chunks[i] + 100, chunks[i + 1] + 100), 0),
+						new Chunk(new Vec2(cx + 100, cy + 100), 0, gen),
 						new Sprite('rectangle', color),
-						Transform.create(new Vec2(498, 498), new Vec2(chunks[i] * 500 + 250, chunks[i + 1] * 500 + 250))
+						Transform.create(new Vec2(498, 498), new Vec2(cx * 500 + 250, cy * 500 + 250))
 					);
 
-					if (objects[i / 2] == 1) {
+					if (obj === 1) {
 						chunk.addChild(
 							ecs.spawn(
 								new Sprite('image', [assets['rock']], 1),
 								Transform.create(new Vec2(250, 250), new Vec2(0, 0))
 							)
 						);
-					}
-
-					if (objects[i / 2] == 2) {
+					} else if (obj === 2) {
 						chunk.addChild(
 							ecs.spawn(
 								new Sprite('image', [assets['tree']], 1),
@@ -182,109 +186,52 @@ function loadChunks(ecs: ECS) {
 						);
 					}
 
-					for (let j = 0; j < 25; j++) {
-						const n = Math.floor(i / 2);
-						const x = (j % 5) * 100;
-						const y = (Math.floor(j / 5) % 5) * 100;
-						if (blocksData[j] == 1) {
-							chunk.addChild(
-								ecs.spawn(
-									new BlockObject(),
-									new Sprite('rectangle', 'orange', 1),
-									Transform.create(new Vec2(100, 100), new Vec2(x - 200, y - 200))
-								)
-							);
-						}
+					for (let i = 0; i < 25; i++) {
+						const block = makeBlock(ecs, assets, blocksData[i], i);
+						if (!block) continue;
+						chunk.addChild(block);
 					}
-					map.chunkEntities[chunks[i + 1] + 100][chunks[i] + 100] = chunk;
+
+					existingChunks.set(`${cx},${cy}`, chunk.id());
+				} else if (ecs.entity(existingChunks.get(`${cx},${cy}`)).get(Chunk).gen !== gen) {
+					const chunk = ecs.entity(existingChunks.get(`${cx},${cy}`));
+
+					chunk.children(With(BlockObject)).forEach((eid) => ecs.destroy(eid));
+
+					for (let i = 0; i < 25; i++) {
+						const block = makeBlock(ecs, assets, blocksData[i], i);
+						if (!block) continue;
+						chunk.addChild(block);
+					}
+
+					ecs.entity(existingChunks.get(`${cx},${cy}`)).get(Chunk).gen = gen;
 				}
 			}
 		});
-	setTimer(ecs, 100);
 }
 
-function loadBlocks(ecs: ECS) {
-	const [c] = ecs.query([Canvas]).single();
-	const assets = ecs.getResource(Assets);
+function makeBlock(ecs: ECS, assets: Assets, blockdata: ArrayBuffer, i: number) {
+	const rawBlockData = unstitch(blockdata);
+	if (rawBlockData.length === 1) return;
 
-	ecs.getEventReader(SocketMessageEvent)
-		.get()
-		.forEach((event) => {
-			if (event.socket.label !== 'game' || event.type !== 'chunk-update') return;
+	const pos = new Vec2(-200, 200).add(new Vec2((i % 5) * 100, Math.floor(i / 5) * -100));
+	const id = decodeString(rawBlockData[0]);
+	const bt = blockNumberToType(new Uint8Array(rawBlockData[1])[0]);
+	const bh = new Uint16Array(rawBlockData[2])[0];
 
-			const data = unstitch(event.body);
-			const chunkPos = data[0];
-			const chunkData = new Uint8Array(data[1]);
-			const blockData = new Uint8Array(data[2]);
+	const material: Handle[] = bt !== 'none' ? assets.blocks[bt] : [assets['missing']];
 
-			const chunks = ecs.query([Chunk]).results();
-			const [map] = ecs.query([LoadedMap], With(Player)).single();
-
-			let [player] = ecs.query([Transform], With(Player)).single();
-
-			chunks.forEach(([chunk], i) => {
-				if (
-					chunk.position.x - 100 === new DataView(chunkPos).getInt16(0, true) &&
-					chunk.position.y - 100 === new DataView(chunkPos).getInt16(2, true)
-				) {
-					let color = 'black';
-					switch (chunkData[0]) {
-						case 0:
-							color = '#80ff80';
-							break;
-						case 1:
-							color = '#008000';
-							break;
-						case 2:
-							color = '#ffff80';
-							break;
-						case 3:
-							color = '#9c6200';
-							break;
-						case 4:
-							color = '#0000ff';
-							break;
-						case 5:
-							color = '#8080ff';
-							break;
-						case 6:
-							color = '#808080';
-							break;
-						case 7:
-							color = '#e00000';
-							break;
-					}
-					map.chunkEntities[chunk.position.y][chunk.position.x].removeChildren(
-						...map.chunkEntities[chunk.position.y][chunk.position.x].children(With(BlockObject))
-					);
-
-					for (let j = 0; j < 25; j++) {
-						const n = Math.floor(i / 2);
-						const x = (j % 5) * 100;
-						const y = (Math.floor(j / 5) % 5) * 100;
-						if (blockData[j] == 1) {
-							map.chunkEntities[chunk.position.y][chunk.position.x].addChild(
-								ecs.spawn(
-									new BlockObject(),
-									new Sprite('rectangle', 'orange', 1),
-									Transform.create(new Vec2(100, 100), new Vec2(x - 200, y - 200))
-								)
-							);
-						}
-					}
-				}
-			});
-		});
+	return ecs.spawn(
+		new BlockObject(id),
+		new Sprite('image', material, 1),
+		new Health(bh),
+		Transform.create(new Vec2(102, 102), pos)
+	);
 }
 
 export function LoadChunksPlugin(ecs: ECS) {
-	ecs.addComponentTypes(Chunk, LoadedMap, BlockObject).addMainSystems(
-		dropChunks,
-		requestChunks,
-		enableMap,
-		loadChunks,
-		loadBlocks
-	);
+	ecs.insertResource(new MapTracker())
+		.addComponentTypes(Chunk, LoadedMap, BlockObject)
+		.addMainSystems(dropChunks, enableMap, loadChunks);
 	ecs.disableSystem(dropChunks);
-	ecs.disableSystem(requestChunks);
 }
