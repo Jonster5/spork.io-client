@@ -11,6 +11,13 @@ export const toolAssets = {
 
 const npcAssets = {
 	pig: ['./npc/pig1.png'],
+	chicken: ['./npc/chicken1.png'],
+	bear: ['./npc/bear1.png'],
+	fish: ['./npc/fish1.png'],
+	jelly: ['./npc/jelly1.png'],
+	wolf: ['./npc/wolf1.png'],
+	scorpion: ['./npc/scorpion1.png'],
+	shark: ['./npc/shark1.png'],
 };
 
 export const blockAssets = {
@@ -44,14 +51,16 @@ async function loadAssets(ecs: ECS) {
 	assets['tree'] = await loadImageInto(canvas, await loadImageFile('./tree.png'));
 	assets['rock'] = await loadImageInto(canvas, await loadImageFile('./rock.png'));
 
-	assets['pig'] = await loadImagesToRenderer(...npcAssets.pig);
+	for (const key in npcAssets) {
+		assets[key] = await loadImagesToRenderer(...npcAssets[key]);
+	}
 
 	assets['missing'] = await loadImageInto(canvas, await loadImageFile('./missing.png'));
 
 	assets['blocks'] = {};
 	for (const key in blockAssets) {
 		for (const [name, url] of blockAssets[key]) {
-			assets['blocks'][`${key}-${name}`] = await loadImagesToRenderer(...[url]);
+			assets['blocks'][`${key}-${name}`] = await loadImagesToRenderer(url);
 			console.log(`${key}-${name}`, assets['blocks'][`${key}-${name}`]);
 		}
 	}

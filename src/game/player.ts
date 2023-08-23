@@ -240,6 +240,20 @@ function requestBlockPlace(ecs: ECS) {
 		});
 }
 
+function swingItem(ecs: ECS) {
+	ecs.getEventReader(InputEvent<'pointerdown'>)
+		.get()
+		.filter(({ type }) => type === 'pointerdown')
+		.forEach((event) => {
+			const socket = getSocket(ecs, 'game');
+
+			const [player] = ecs.query([Player]).single();
+			const [transform] = ecs.query([Transform], With(Player)).single();
+
+			socket.send('request-block-place', stitch(encodeString(player.pid), transform.serialize()));
+		});
+}
+
 function updateServer(ecs: ECS) {
 	if (ecs.query([], With(Player)).empty()) {
 		ecs.disableSystem(updateServer);
