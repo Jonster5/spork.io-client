@@ -122,7 +122,7 @@ function despawnNPCS(ecs: ECS) {
 			const entity = ecs.entity(eid);
 			entity.get(NPC).tSinceLastUpdate += time.delta;
 
-			if (entity.get(NPC).tSinceLastUpdate > 3000) {
+			if (entity.get(NPC).tSinceLastUpdate > 500) {
 				ecs.getEventWriter(RemoveNPCEvent).send(new RemoveNPCEvent(eid));
 			}
 		});
