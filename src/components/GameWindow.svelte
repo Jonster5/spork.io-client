@@ -7,6 +7,9 @@
 	import Inventory from './Inventory.svelte';
 	import { RequestUpgradeEvent, type ToolList, type ToolType } from '../game/tools';
 	import ToolItem from './ToolItem.svelte';
+	import HotbarItem from './HotbarItem.svelte';
+	import type { BlockType } from '../game/loadchunks';
+	import { blockAssets } from '../game/assets';
 
 	let target: HTMLElement;
 	let ecs: ECS;
@@ -16,6 +19,8 @@
 
 	const tools: Writable<ToolList> = writable([0, 0, 0, 0]);
 	const selectedTool: Writable<ToolType> = writable('wood');
+	const selectedBlock: Writable<'none' | BlockType> = writable('none');
+	const hbitems = Object.keys(blockAssets) as (keyof typeof blockAssets)[];
 
 	let requestUpgradeEvent: EventWriter<RequestUpgradeEvent>;
 
@@ -24,7 +29,7 @@
 	const food = writable(0);
 	const gold = writable(0);
 
-	const ui = new UIData(tools, selectedTool, wood, stone, food, gold);
+	const ui = new UIData(tools, selectedTool, selectedBlock, wood, stone, food, gold);
 
 	onMount(async () => {
 		ecs = createGame(target, ui, username, url);
@@ -45,32 +50,56 @@
 		<ToolItem type="melee" {selectedTool} {requestUpgradeEvent} {tools} />
 		<ToolItem type="projectile" {selectedTool} {requestUpgradeEvent} {tools} />
 	</div>
+	<div class="hotbar">
+		{#each hbitems as name}
+			<HotbarItem {selectedBlock} {name} />
+		{/each}
+	</div>
 </main>
 
 <style lang="scss">
 	@import '../colors.scss';
 
 	main {
-		display: grid;
-
 		width: 100%;
 		height: 100%;
 
 		padding: 10px;
 		box-sizing: border-box;
 
-		grid: repeat(10, 1fr) / repeat(9, 1fr);
 		gap: 10px;
 
+		.hotbar {
+			display: flex;
+			position: absolute;
+
+			height: 5vw;
+
+			padding: 0 10px;
+
+			bottom: 10px;
+			left: 50%;
+			transform: translateX(-50%);
+
+			background: #00000088;
+			border-radius: 10px;
+			box-shadow: 0 0 10px black;
+		}
+
 		.inventory {
-			grid-area: 1 / 1 / span 1 / span 2;
+			position: absolute;
+
+			height: 5vh;
+
+			top: 10px;
+			left: 10px;
 		}
 
 		.tools {
 			display: flex;
 			position: absolute;
 
-			height: 10vh;
+			height: 5vw;
 
 			left: 10px;
 			bottom: 10px;

@@ -35,7 +35,7 @@ function recieveUpdate(ecs: ECS) {
 	ecs.getEventReader(SocketMessageEvent)
 		.get()
 		.forEach(({ socket, type, body }) => {
-			if (socket.label !== 'game' || type !== 'update') return;
+			if (socket.label !== 'game' || type !== 'player-update') return;
 
 			const update = unstitch(body);
 

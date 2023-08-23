@@ -15,7 +15,7 @@
 </script>
 
 <button class="holder" style:transform={isSelected ? 'translateY(-10px)' : ''} on:click={() => ($selectedTool = type)}>
-	<div class={isSelected ? 'selected' : ''}>
+	<div class:selected={isSelected}>
 		<img class="tool" src={toolAssets[type][$tools[index]]} alt={type} />
 	</div>
 	<button
