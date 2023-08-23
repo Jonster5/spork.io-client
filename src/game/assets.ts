@@ -10,6 +10,13 @@ export const toolAssets = {
 
 const npcAssets = {
 	pig: ['./npc/pig1.png'],
+	chicken: ['./npc/chicken1.png'],
+	bear: ['./npc/bear1.png'],
+	fish: ['./npc/fish1.png'],
+	jelly: ['./npc/jelly1.png'],
+	wolf: ['./npc/wolf1.png'],
+	scorpion: ['./npc/scorpion1.png'],
+	shark: ['./npc/shark1.png'],
 };
 
 async function loadAssets(ecs: ECS) {
@@ -28,6 +35,34 @@ async function loadAssets(ecs: ECS) {
 	assets['rock'] = await loadImageInto(canvas, await loadImageFile('./rock.png'));
 
 	assets['pig'] = await loadImages(...npcAssets.pig).then((imgs) =>
+		Promise.all(imgs.map((i) => loadImageInto(canvas, i)))
+	);
+
+	assets['chicken'] = await loadImages(...npcAssets.chicken).then((imgs) =>
+		Promise.all(imgs.map((i) => loadImageInto(canvas, i)))
+	);
+
+	assets['bear'] = await loadImages(...npcAssets.bear).then((imgs) =>
+		Promise.all(imgs.map((i) => loadImageInto(canvas, i)))
+	);
+
+	assets['fish'] = await loadImages(...npcAssets.fish).then((imgs) =>
+		Promise.all(imgs.map((i) => loadImageInto(canvas, i)))
+	);
+
+	assets['jelly'] = await loadImages(...npcAssets.jelly).then((imgs) =>
+		Promise.all(imgs.map((i) => loadImageInto(canvas, i)))
+	);
+
+	assets['wolf'] = await loadImages(...npcAssets.wolf).then((imgs) =>
+		Promise.all(imgs.map((i) => loadImageInto(canvas, i)))
+	);
+
+	assets['scorpion'] = await loadImages(...npcAssets.scorpion).then((imgs) =>
+		Promise.all(imgs.map((i) => loadImageInto(canvas, i)))
+	);
+
+	assets['shark'] = await loadImages(...npcAssets.shark).then((imgs) =>
 		Promise.all(imgs.map((i) => loadImageInto(canvas, i)))
 	);
 }

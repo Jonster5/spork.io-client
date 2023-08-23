@@ -14,7 +14,7 @@ import {
 import { Health } from './health';
 import { Player } from './player';
 
-export type NPCType = 'pig' | 'chicken';
+export type NPCType = 'pig' | 'chicken' | 'scorpion';
 
 export class NPC extends Component {
 	constructor(public nid: string, readonly type: NPCType) {
@@ -92,7 +92,10 @@ function addNPC(ecs: ECS) {
 					entity.insert(new Sprite('image', assets['pig'], 4));
 					break;
 				case 'chicken':
-					entity.insert(new Sprite('ellipse', 'whitesmoke', 4));
+					entity.insert(new Sprite('image', assets['chicken'], 4));
+					break;
+				case 'scorpion':
+					entity.insert(new Sprite('image', assets['scorpion'], 4));
 					break;
 			}
 		});
