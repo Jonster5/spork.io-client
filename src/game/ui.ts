@@ -1,10 +1,10 @@
-import { ECS, ECSEvent, Resource, With } from 'raxis';
+import { ECS, ECSEvent, Resource, Vec2, With } from 'raxis';
 import { get, type Writable } from 'svelte/store';
 import { BlockHighlight, Player } from './player';
 import { Inventory } from './inventory';
 import { Tools, type ToolList, type ToolTier, type ToolType } from './tools';
 import { Flags } from './flags';
-import { Assets, Handle, Sprite, encodeString, getSocket, gotoImageFrame, stitch } from 'raxis-plugins';
+import { Assets, Handle, Sprite, Transform, encodeString, getSocket, gotoImageFrame, stitch } from 'raxis-plugins';
 import { blockTypeToNumber, type BlockType } from './loadchunks';
 import { blockAssets } from './assets';
 
@@ -16,8 +16,16 @@ export class UIData extends Resource {
 		public wood: Writable<number>,
 		public stone: Writable<number>,
 		public food: Writable<number>,
-		public gold: Writable<number>
+		public gold: Writable<number>,
+		public mapdata: Writable<ImageData>,
+		public playerpos: Writable<Vec2>
 	) {
+		super();
+	}
+}
+
+export class ClickTarget extends Resource {
+	constructor(public element: HTMLElement) {
 		super();
 	}
 }
@@ -28,6 +36,17 @@ function setTool(ecs: ECS) {
 	const { selectedTool } = ecs.getResource(UIData);
 
 	flags.selectedTool = get(selectedTool);
+}
+
+function setPos(ecs: ECS) {
+	if (ecs.query([Transform], With(Player)).empty()) return;
+	const [{ pos }] = ecs.query([Transform], With(Player)).single();
+	const { playerpos } = ecs.getResource(UIData);
+
+	const chunk = pos.clone().div(500).floor();
+
+	if (get(playerpos).equals(chunk)) return;
+	playerpos.set(chunk);
 }
 
 function setBlock(ecs: ECS) {
@@ -69,5 +88,5 @@ function updateToolList(ecs: ECS) {
 }
 
 export function UIPlugin(ecs: ECS) {
-	ecs.addMainSystems(updateInventory, setTool, setBlock, updateToolList);
+	ecs.addMainSystems(updateInventory, setTool, setBlock, updateToolList, setPos);
 }

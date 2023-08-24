@@ -9,7 +9,7 @@
 
 <div class="box">
 	<div class="resource">
-		<img src="wood.svg" alt="Wood" /><span>x{$wood}</span>
+		<img src="wood.svg" alt="Wood" /><span>{$wood}</span>
 	</div>
 	<div class="line" />
 	<div class="resource">
@@ -26,6 +26,10 @@
 </div>
 
 <style lang="scss">
+	:root {
+		user-select: none;
+	}
+
 	.box {
 		display: flex;
 		height: 100%;

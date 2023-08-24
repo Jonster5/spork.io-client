@@ -1,21 +1,10 @@
 import { ECS, ECSEvent, Resource, Vec2, Component } from 'raxis';
 import { Canvas, Sprite, Transform, loadImageInto } from 'raxis-plugins';
 import { MapLoadedEvent, Player } from './player';
+import { UIData } from './ui';
 
 export class LoadMinimapEvent extends ECSEvent {
 	constructor(public minimapData: ArrayBuffer) {
-		super();
-	}
-}
-
-export class Minimap extends Component {
-	constructor() {
-		super();
-	}
-}
-
-export class PlayerMapIcon extends Component {
-	constructor() {
 		super();
 	}
 }
@@ -95,23 +84,13 @@ function loadMinimap(ecs: ECS) {
 				}
 			}
 
-			const canvas = new OffscreenCanvas(size[0], size[1]);
-			const ctx = canvas.getContext('2d');
-
-			ctx.translate(size[0] / 2, size[1] / 2);
-			ctx.putImageData(imageData, 0, 0);
-
-			ecs.spawn(
-				new Minimap(),
-				Transform.create(new Vec2(400, 400)),
-				new Sprite('image', [await loadImageInto(ecs.query([Canvas]).single()[0], canvas)], 1)
-			);
-			ecs.spawn(new PlayerMapIcon(), Transform.create(new Vec2(10, 10)), new Sprite('ellipse', 'black', 2));
+			const { mapdata } = ecs.getResource(UIData);
+			mapdata.set(imageData);
 
 			ecs.getEventWriter(MapLoadedEvent).send(new MapLoadedEvent());
 		});
 }
 
 export function MinimapPlugin(ecs: ECS) {
-	ecs.addComponentTypes(Minimap, PlayerMapIcon).addEventType(LoadMinimapEvent).addMainSystem(loadMinimap);
+	ecs.addEventType(LoadMinimapEvent).addMainSystem(loadMinimap);
 }
