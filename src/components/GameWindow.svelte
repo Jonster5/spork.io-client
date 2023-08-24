@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ECS, EventWriter } from 'raxis';
+	import { Vec2, type ECS, type EventWriter } from 'raxis';
 	import { onMount } from 'svelte';
 	import { createGame } from '../game/game';
 	import { UIData } from '../game/ui';
@@ -10,8 +10,10 @@
 	import HotbarItem from './HotbarItem.svelte';
 	import type { BlockType } from '../game/loadchunks';
 	import { blockAssets } from '../game/assets';
+	import Minimap from './minimap.svelte';
 
 	let target: HTMLElement;
+	let wrapper: HTMLElement;
 	let ecs: ECS;
 
 	const username = localStorage.getItem('name') ?? '';
@@ -21,6 +23,8 @@
 	const selectedTool: Writable<ToolType> = writable('wood');
 	const selectedBlock: Writable<'none' | BlockType> = writable('none');
 	const hbitems = Object.keys(blockAssets) as (keyof typeof blockAssets)[];
+	const playerpos = writable(new Vec2());
+	const mapdata = writable(new ImageData(200, 200));
 
 	let requestUpgradeEvent: EventWriter<RequestUpgradeEvent>;
 
@@ -29,10 +33,10 @@
 	const food = writable(0);
 	const gold = writable(0);
 
-	const ui = new UIData(tools, selectedTool, selectedBlock, wood, stone, food, gold);
+	const ui = new UIData(tools, selectedTool, selectedBlock, wood, stone, food, gold, mapdata, playerpos);
 
 	onMount(async () => {
-		ecs = createGame(target, ui, username, url);
+		ecs = createGame(target, wrapper, ui, username, url);
 		await ecs.run();
 		requestUpgradeEvent = ecs.getEventWriter(RequestUpgradeEvent);
 	});
@@ -40,7 +44,7 @@
 
 <div id="target" bind:this={target} />
 
-<main>
+<main bind:this={wrapper}>
 	<div class="inventory">
 		<Inventory {wood} {stone} {food} {gold} />
 	</div>
@@ -55,6 +59,9 @@
 			<HotbarItem {selectedBlock} {name} />
 		{/each}
 	</div>
+	<div class="minimap">
+		<Minimap {playerpos} {mapdata} />
+	</div>
 </main>
 
 <style lang="scss">
@@ -68,6 +75,15 @@
 		box-sizing: border-box;
 
 		gap: 10px;
+
+		.minimap {
+			position: absolute;
+			width: 15vw;
+			height: 15vw;
+
+			right: 10px;
+			bottom: 10px;
+		}
 
 		.hotbar {
 			display: flex;

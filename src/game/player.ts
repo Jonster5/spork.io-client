@@ -22,13 +22,13 @@ import {
 	Handle,
 } from 'raxis-plugins';
 import { GameInitData } from './game';
-import { LoadMinimapEvent, Minimap, PlayerMapIcon } from './minimap';
+import { LoadMinimapEvent } from './minimap';
 import { Chunk, LoadedMap, blockTypeToNumber } from './loadchunks';
 import { Health } from './health';
 import { Inventory } from './inventory';
 import { ToolDisplay, Tools, type ToolTier } from './tools';
 import { Flags } from './flags';
-import { UIData } from './ui';
+import { ClickTarget, UIData } from './ui';
 import { get } from 'svelte/store';
 import { blockAssets } from './assets';
 
@@ -62,12 +62,14 @@ function playerMovement(ecs: ECS) {
 
 	vel.set(0, 0);
 
-	if (keymap.get('KeyA').isDown) vel.x -= 500;
-	if (keymap.get('KeyS').isDown) vel.y -= 500;
-	if (keymap.get('KeyW').isDown) vel.y += 500;
-	if (keymap.get('KeyD').isDown) vel.x += 500;
+	const speed = 500;
 
-	vel.clampMag(0, 500);
+	if (keymap.get('KeyA').isDown) vel.x -= speed;
+	if (keymap.get('KeyS').isDown) vel.y -= speed;
+	if (keymap.get('KeyW').isDown) vel.y += speed;
+	if (keymap.get('KeyD').isDown) vel.x += speed;
+
+	vel.clampMag(0, speed);
 
 	const clicking = ecs.getResource(Inputs).pointer.isDown ? 1 : 0;
 	const player = ecs.query([Player]).entity();
@@ -145,34 +147,10 @@ function AABB(player: Transform, block: Transform, blockPos: Vec2) {
 function translateCamera(ecs: ECS) {
 	const [canvasTransform] = ecs.query([Transform], With(Canvas)).single();
 	const [playerTransform] = ecs.query([Transform], With(Player)).single();
-	const [minimapTransform] = ecs.query([Transform], With(Minimap)).single();
 	const { pointer } = ecs.getResource(Inputs);
 
-	const [iconTransform] = ecs.query([Transform], With(PlayerMapIcon)).single();
-
 	const coolOffset = pointer.ray.pos.clone().sub(playerTransform.pos).div(new Vec2(-20, -10));
-	minimapTransform.pos.set(
-		playerTransform.pos
-			.clone()
-			.add(
-				new Vec2(
-					canvasTransform.size.x / 2 - minimapTransform.size.x / 2,
-					canvasTransform.size.y / 2 - minimapTransform.size.y / 2
-				)
-			)
-			.sub(coolOffset)
-	);
-	iconTransform.pos.set(
-		playerTransform.pos
-			.clone()
-			.add(
-				new Vec2(
-					canvasTransform.size.x / 2 - minimapTransform.size.x / 2 + playerTransform.pos.x / 250,
-					canvasTransform.size.y / 2 - minimapTransform.size.y / 2 + playerTransform.pos.y / 250
-				)
-			)
-			.sub(coolOffset)
-	);
+
 	playerTransform.angle = Vec2.unit(pointer.ray.pos.clone().sub(playerTransform.pos)).angle();
 	canvasTransform.pos.set(playerTransform.pos.clone().mul(-1).add(coolOffset));
 
@@ -223,6 +201,9 @@ function requestBlockPlace(ecs: ECS) {
 		.get()
 		.filter(({ type }) => type === 'pointerdown')
 		.forEach(({ event }) => {
+			const { element } = ecs.getResource(ClickTarget);
+			if (event.target !== element) return;
+
 			const socket = getSocket(ecs, 'game');
 
 			const [player] = ecs.query([Player]).single();
